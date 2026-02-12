@@ -1,0 +1,19 @@
+{
+  "page_not_found": "Страница не найдена",
+  "home": "Главная",
+  "filter": "Фильтр",
+  "registration": "Регистрация",
+  "appoint": "Назначенные пакеты",
+  "button": {
+    "back_to_main": "На главную страницу"
+  },
+  "notification_statuses": {
+    "sent": "Отправлено",
+    "waiting": "Ожидается",
+    "cancelled": "Отменено"
+  },
+  "is_sent": {
+    "false": "Не отправлено",
+    "true": "Отправлено"
+  }
+}

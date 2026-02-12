@@ -1,0 +1,19 @@
+{
+  "page_not_found": "Page Not Found",
+  "home": "Main",
+  "filter": "Filter",
+  "registration": "Registration",
+  "appoint": "Appointed packages",
+  "button": {
+    "back_to_main": "Back to Home"
+  },
+  "notification_statuses": {
+    "sent": "Sent",
+    "waiting": "Waiting",
+    "cancelled": "Cancelled"
+  },
+  "is_sent": {
+    "false": "Not sent",
+    "true": "Sent"
+  }
+}

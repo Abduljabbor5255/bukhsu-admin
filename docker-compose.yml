@@ -1,0 +1,17 @@
+ version: '3.7'
+
+services:
+  fit-dashboard:
+    build:
+      context: .
+      dockerfile: docker/Dockerfile
+    environment:
+      VITE_APP_URL_V1: ${VITE_APP_URL_V1}
+      VITE_APP_URL_V2: ${VITE_APP_URL_V2}
+      VITE_APP_URL_V3: ${VITE_APP_URL_V3}
+    ports:
+      - "8011:8090"
+    container_name: fit-dashboard
+    working_dir: /app
+    volumes:
+      - .:/app

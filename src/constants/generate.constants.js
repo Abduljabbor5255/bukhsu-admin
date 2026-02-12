@@ -1,0 +1,5 @@
+export const AUTH_TOKEN_KEY = '4mC1rPbbw2WI1fp9IoIWPoQVJMXO8ToW'
+export const AUTH_REFRESH_KEY = 'LGdiA2YylrXzaO7lOJgrstCd6H5p5oA9'
+
+// export const CURRENT_MERCHANT = 'A3DB15528C735FDA'
+

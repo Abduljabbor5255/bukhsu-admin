@@ -1,0 +1,19 @@
+{
+  "page_not_found": "Sahifa topilmadi",
+  "home": "Asosiy",
+  "filter": "Filter",
+  "registration": "Registratsiya",
+  "appoint": "Berilgan paketlar",
+  "button": {
+    "back_to_main": "Bosh sahifaga"
+  },
+  "notification_statuses": {
+    "sent": "Yuborildi",
+    "waiting": "Kutilayapti",
+    "cancelled": "Bekor qilindi"
+  },
+  "is_sent": {
+    "false": "Yuborilmagan",
+    "true": "Yuborilgan"
+  }
+}
