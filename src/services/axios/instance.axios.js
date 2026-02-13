@@ -1,16 +1,13 @@
-import axios from "axios"
 import router from "@/router"
-import { AUTH_TOKEN_KEY } from "@/constants/generate.constants"
+import axios from "axios"
 
 export {
   axiosBase,
-  getInstance,
-
-  // axiosV2,
+  getInstance
 }
 
 
-function axiosBase({ endpoint = '' }){
+function axiosBase({ endpoint = '' }) {
   return generateInstance({ baseUrl: import.meta.env.VITE_APP_URL_V1 + endpoint })
 }
 
@@ -22,8 +19,8 @@ function axiosBase({ endpoint = '' }){
 //   return generateInstance({ baseUrl: import.meta.env.VITE_APP_URL_V3 + endpoint })
 // }
 
-function getInstance({ apiVersion= 2, endpoint='' }){
-  if(apiVersion === 1){
+function getInstance({ apiVersion = 2, endpoint = '' }) {
+  if (apiVersion === 1) {
     return axiosBase({ endpoint })
   }
 
@@ -39,10 +36,13 @@ export function generateInstance({ baseUrl = '' }) {
     baseURL: baseUrl,
   })
 
-  gInstance.interceptors.request.use(interceptResponseHandler, e =>Promise.reject(e))
+  gInstance.interceptors.request.use(interceptResponseHandler, e => Promise.reject(e))
 
 
   gInstance.interceptors.response.use(function returnResponse(rsp) {
+    if (rsp.data && rsp.data.meta && !rsp.data.pagination) {
+      rsp.data.pagination = rsp.data.meta
+    }
     return rsp
   }, interceptErrorHandler)
 

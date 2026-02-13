@@ -4,7 +4,7 @@ class NewsService extends CoreAxios {
   constructor() {
     super({
       apiVersion: 1,
-      endpoint: '/news',
+      endpoint: '/admin/news',
     })
   }
 

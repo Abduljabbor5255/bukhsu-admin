@@ -4,7 +4,7 @@ class AuthService extends CoreAxios {
   constructor() {
     super({
       apiVersion: 1,
-      endpoint: '/auth',
+      endpoint: '/admin/auth',
     })
   }
 

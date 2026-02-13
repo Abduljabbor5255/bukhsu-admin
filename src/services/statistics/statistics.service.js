@@ -4,7 +4,7 @@ class StatisticsService extends CoreAxios {
   constructor() {
     super({
       apiVersion: 1,
-      endpoint: '/statistic',
+      endpoint: '/admin/statistic',
     })
   }
 

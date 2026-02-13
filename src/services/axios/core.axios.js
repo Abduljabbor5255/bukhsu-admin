@@ -1,13 +1,13 @@
-import { useSnackbarStore } from "@/store/snackbar.store"
 import { getInstance } from "@/services/axios/instance.axios"
+import { useSnackbarStore } from "@/store/snackbar.store"
 
 export default class CoreAxios {
   constructor({ axiosIns = null, apiVersion = 1, endpoint = '' }
-  = { axiosIns: null, instanceName: null, endpoint: '' },
+    = { axiosIns: null, instanceName: null, endpoint: '' },
   ) {
-    if(axiosIns){
+    if (axiosIns) {
       this._axios = axiosIns
-    }else {
+    } else {
       this._axios = getInstance({
         apiVersion,
         endpoint,
@@ -31,24 +31,24 @@ export default class CoreAxios {
     return this._axios.delete(url).catch(throwRequestError)
   }
 
-  findAll({ params = {} }) {
-    return this.post('/findAll', params)
+  findAll(params = {}) {
+    return this.post('/list', params.params || params)
   }
 
-  findOne({ params = {} }) {
-    return this.post('/findOne', params)
+  findOne(params = {}) {
+    return this.post('/get', params.params || params)
   }
 
-  create({ params = {} }) {
-    return this.post('', params)
+  create(params = {}) {
+    return this.post('/create', params.params || params)
   }
 
-  update({ params = {} }) {
-    return this.post('/update', params)
+  update(params = {}) {
+    return this.post('/update', params.params || params)
   }
 
-  remove({ params = {} }) {
-    return this.post('/remove', params)
+  remove(params = {}) {
+    return this.post('/delete', params.params || params)
   }
 }
 
@@ -59,14 +59,14 @@ export function throwRequestError(error) {
 
   if (error.hasOwnProperty('response')) {
     const hasMessageInData = error.response.hasOwnProperty('data') &&
-        error.response.data.hasOwnProperty('messages')
+      error.response.data.hasOwnProperty('messages')
 
-    if(hasMessageInData){
+    if (hasMessageInData) {
       snackbarStore.showSnackbar(`${error.response.data.message} | status:${error.response.status}`)
     } else {
       snackbarStore.showSnackbar(error.message)
     }
-  } else if(error.hasOwnProperty('message')){
+  } else if (error.hasOwnProperty('message')) {
     snackbarStore.showSnackbar(error.message)
   } else {
     snackbarStore.showSnackbar(error)

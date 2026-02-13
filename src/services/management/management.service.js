@@ -4,7 +4,7 @@ class ManagementService extends CoreAxios {
     constructor() {
         super({
             apiVersion: 1,
-            endpoint: '/management',
+            endpoint: '/admin/management',
         })
     }
 }

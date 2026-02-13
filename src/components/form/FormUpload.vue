@@ -1,13 +1,14 @@
 <script setup>
+import { uploadApi } from "@/services/upload/upload.service"
 import { onMounted, ref, watch } from "vue"
 
-import * as FilePond from '@/plugins/fileUploader/filepond/js'
 import FilePondImagePreview from "@/plugins/fileUploader/filepond-image-preview/js"
 import FilePondPluginFileValidateType from '@/plugins/fileUploader/filepond-validate-type/js'
+import * as FilePond from '@/plugins/fileUploader/filepond/js'
 
 /*! CSS FILES */
-import "@/plugins/fileUploader/filepond/css/styles.css"
 import "@/plugins/fileUploader/filepond-image-preview/css/styles.css"
+import "@/plugins/fileUploader/filepond/css/styles.css"
 import { isArray } from "@/util/inspect"
 import { isNull, isObject, isUndefined } from "@/util/inspect.util"
 import { hasOwnProperty } from "@/util/object.util"
@@ -201,10 +202,10 @@ async function processTrigger(fieldName, file, metadata, load, error, progress, 
         signal: controller.signal,
       }
 
-      const uploadRsp = await dashboardUploadApi.uploadsCreate({
+      const uploadRsp = await uploadApi.uploads({
         config,
         body: formData,
-        type: props.uploadServiceName,
+        uploadServiceName: props.uploadServiceName,
       })
 
       load(

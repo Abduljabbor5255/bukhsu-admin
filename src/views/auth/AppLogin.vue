@@ -1,9 +1,11 @@
 <script setup>
+import { authApi } from "@/services/auth/auth.service"
+import { useForm } from "vee-validate"
 import { ref } from "vue"
 import * as yup from "yup"
-import { useForm } from "vee-validate"
-import { authApi } from "@/services/auth/auth.service"
 
+import { useLoading } from "@/composable/useLoading"
+import LoginInput from "@/views/auth/components/LoginInput.vue"
 import { useGenerateImageVariant } from '@core/composable/useGenerateImageVariant'
 import authV2LoginIllustrationBorderedDark from '@images/pages/auth-v2-login-illustration-bordered-dark.png'
 import authV2LoginIllustrationBorderedLight from '@images/pages/auth-v2-login-illustration-bordered-light.png'
@@ -11,20 +13,18 @@ import authV2LoginIllustrationDark from '@images/pages/auth-v2-login-illustratio
 import authV2LoginIllustrationLight from '@images/pages/auth-v2-login-illustration-light.png'
 import authV2MaskDark from '@images/pages/misc-mask-dark.png'
 import authV2MaskLight from '@images/pages/misc-mask-light.png'
-import LoginInput from "@/views/auth/components/LoginInput.vue"
-import { useLoading } from "@/composable/useLoading"
 import { useRouter } from "vue-router"
 
 const router = useRouter()
 
 const { values, errors, defineInputBinds } = useForm({
   validationSchema: yup.object({
-    login: yup.string().required(),
+    username: yup.string().required(),
     password: yup.string().required(),
   }),
 })
 
-const login = defineInputBinds('login')
+const username = defineInputBinds('username')
 const password = defineInputBinds('password')
 const { isFetching, startFetching, finishFetching } = useLoading()
 
@@ -33,9 +33,9 @@ async function authorize() {
     startFetching()
 
     const rsp = await authApi.authorize(values)
-
-    const userName = rsp.data.data.user.login
-    const { accessToken } = rsp.data.data
+    console.log(rsp)
+    const userName = rsp.data.result.user.username
+    const { accessToken } = rsp.data.result
 
     localStorage.setItem('accessToken', accessToken)
     localStorage.setItem('userName', userName)
@@ -100,10 +100,10 @@ const authThemeMask = useGenerateImageVariant(authV2MaskLight, authV2MaskDark)
                 class="py-0"
               >
                 <LoginInput
-                  name="login"
-                  type="login"
-                  label="E-mail"
-                  placeholder="Your login address"
+                  name="username"
+                  type="username"
+                  label="Username"
+                  placeholder="Your username"
                 />
               </VCol>
 

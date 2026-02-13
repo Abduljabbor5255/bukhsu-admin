@@ -4,7 +4,7 @@ class ToursService extends CoreAxios {
     constructor() {
         super({
             apiVersion: 1,
-            endpoint: '/tours',
+            endpoint: '/admin/concerts',
         })
     }
 }
