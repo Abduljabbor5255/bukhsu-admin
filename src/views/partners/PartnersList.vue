@@ -1,6 +1,6 @@
 <script setup>
 import { useLoading } from "@/composable/useLoading"
-import { newsApi } from "@/services/news/news.service"
+import { partnersApi } from "@/services/partners/partners.service"
 import { getValueMatchLocale } from "@/util/helper"
 import { toTypedSchema } from '@vee-validate/yup'
 import { useForm } from 'vee-validate'
@@ -27,13 +27,14 @@ const isSnackbarVisible = ref(false)
 const snackbarText = ref("")
 const itemID = ref(null)
 const btnLoading = ref(false)
-const isPublished = ref(true)
+const isActive = ref(true)
 
 const headers = [
   { title: 'ID', key: 'id', sortable: false },
-  { title: 'Sarlavha', key: 'title', sortable: false },
-  { title: 'Kategoriya', key: 'category', sortable: false },
-  { title: 'Holat', key: 'isPublished', sortable: false },
+  { title: 'Nomi', key: 'alt', sortable: false },
+  { title: 'Havola', key: 'link', sortable: false },
+  { title: 'Tartib', key: 'order', sortable: false },
+  { title: 'Holat', key: 'isActive', sortable: false },
   { title: 'Amallar', key: 'actions', sortable: false },
 ]
 
@@ -45,47 +46,34 @@ const multiLangObj = () => yup.object({
 
 const { values, defineComponentBinds, handleSubmit, resetForm, setValues, errors } = useForm({
   initialValues: {
-    title: { uz: '', ru: '', en: '' },
-    content: { uz: '', ru: '', en: '' },
-    category: { uz: '', ru: '', en: '' },
-    mainImage: null,
-    videoUrl: '',
-    gallery: [],
+    image: null,
+    alt: { uz: '', ru: '', en: '' },
+    link: '',
+    order: 1,
   },
   validationSchema: toTypedSchema(yup.object({
-    title: multiLangObj(),
-    content: multiLangObj(),
-    category: multiLangObj(),
-    mainImage: yup.number().required('Majburiy maydon'),
-    videoUrl: yup.string().nullable(),
-    gallery: yup.array().nullable(),
+    image: yup.number().required('Majburiy maydon'),
+    alt: multiLangObj(),
+    link: yup.string().required('Majburiy maydon'),
+    order: yup.number().required('Majburiy maydon').default(1),
   })),
 })
 
 const modalForm = {
-  title: {
-    uz: defineComponentBinds('title.uz'),
-    ru: defineComponentBinds('title.ru'),
-    en: defineComponentBinds('title.en'),
+  image: defineComponentBinds('image'),
+  alt: {
+    uz: defineComponentBinds('alt.uz'),
+    ru: defineComponentBinds('alt.ru'),
+    en: defineComponentBinds('alt.en'),
   },
-  content: {
-    uz: defineComponentBinds('content.uz'),
-    ru: defineComponentBinds('content.ru'),
-    en: defineComponentBinds('content.en'),
-  },
-  category: {
-    uz: defineComponentBinds('category.uz'),
-    ru: defineComponentBinds('category.ru'),
-    en: defineComponentBinds('category.en'),
-  },
-  mainImage: defineComponentBinds('mainImage'),
-  videoUrl: defineComponentBinds('videoUrl'),
+  link: defineComponentBinds('link'),
+  order: defineComponentBinds('order'),
 }
 
 async function fetchItems() {
   startFetching()
   try {
-    const { data } = await newsApi.findAll({
+    const { data } = await partnersApi.findAll({
       params: {
         page: currentPage.value,
         limit: itemsPerPage.value,
@@ -105,17 +93,15 @@ async function fetchOneItem(id, mode = 'edit') {
   isDisabledForm.value = mode === 'show'
   startFetching()
   try {
-    const { data } = await newsApi.findOne({ params: { id } })
+    const { data } = await partnersApi.findOne({ params: { id } })
     const r = data.result
     setValues({
-      title: r.title || { uz: '', ru: '', en: '' },
-      content: r.content || { uz: '', ru: '', en: '' },
-      category: r.category || { uz: '', ru: '', en: '' },
-      mainImage: r.mainImage ? (typeof r.mainImage === 'object' ? r.mainImage.id : r.mainImage) : null,
-      videoUrl: r.videoUrl || '',
-      gallery: r.gallery || [],
+      image: r.image ? (typeof r.image === 'object' ? r.image.id : r.image) : null,
+      alt: r.alt || { uz: '', ru: '', en: '' },
+      link: r.link || '',
+      order: r.order || 1,
     })
-    isPublished.value = r.isPublished !== undefined ? r.isPublished : true
+    isActive.value = r.isActive !== undefined ? r.isActive : true
     showModal.value = true
   } catch (e) {
     console.error(e)
@@ -129,14 +115,14 @@ const submitItem = handleSubmit(async (formValues) => {
   try {
     const payload = {
       ...formValues,
-      isPublished: isPublished.value,
+      isActive: isActive.value,
     }
     if (itemID.value) {
-      await newsApi.update({ params: { id: itemID.value, ...payload } })
-      snackbarText.value = "Yangilik muvaffaqiyatli yangilandi"
+      await partnersApi.update({ params: { id: itemID.value, ...payload } })
+      snackbarText.value = "Hamkor muvaffaqiyatli yangilandi"
     } else {
-      await newsApi.create({ params: payload })
-      snackbarText.value = "Yangilik muvaffaqiyatli yaratildi"
+      await partnersApi.create({ params: payload })
+      snackbarText.value = "Hamkor muvaffaqiyatli yaratildi"
     }
     isSnackbarVisible.value = true
     closeModals()
@@ -151,8 +137,8 @@ const submitItem = handleSubmit(async (formValues) => {
 async function deleteItem() {
   btnLoading.value = true
   try {
-    await newsApi.remove({ params: { id: itemID.value } })
-    snackbarText.value = "Yangilik muvaffaqiyatli o'chirildi"
+    await partnersApi.remove({ params: { id: itemID.value } })
+    snackbarText.value = "Hamkor muvaffaqiyatli o'chirildi"
     isSnackbarVisible.value = true
     closeDeleteModal()
     fetchItems()
@@ -167,7 +153,7 @@ function openCreateModal() {
   resetForm()
   itemID.value = null
   isDisabledForm.value = false
-  isPublished.value = true
+  isActive.value = true
   showModal.value = true
 }
 
@@ -196,7 +182,7 @@ onMounted(() => {
   <section>
     <VCard>
       <VCardText class="d-flex justify-space-between align-center">
-        <h2 class="text-h4">Yangiliklar</h2>
+        <h2 class="text-h4">Hamkorlar</h2>
         <VBtn @click="openCreateModal" color="primary" prepend-icon="tabler-plus">
           Qo'shish
         </VBtn>
@@ -209,17 +195,13 @@ onMounted(() => {
         :loading="loading"
         class="text-no-wrap"
       >
-        <template #item.title="{ item }">
-          {{ getValueMatchLocale(item.raw.title) }}
+        <template #item.alt="{ item }">
+          {{ getValueMatchLocale(item.raw.alt) }}
         </template>
 
-        <template #item.category="{ item }">
-          {{ getValueMatchLocale(item.raw.category) }}
-        </template>
-
-        <template #item.isPublished="{ item }">
-          <VChip :color="item.raw.isPublished ? 'success' : 'warning'" size="small">
-            {{ item.raw.isPublished ? 'Faol' : 'Nofaol' }}
+        <template #item.isActive="{ item }">
+          <VChip :color="item.raw.isActive ? 'success' : 'warning'" size="small">
+            {{ item.raw.isActive ? 'Faol' : 'Nofaol' }}
           </VChip>
         </template>
 
@@ -247,57 +229,40 @@ onMounted(() => {
 
     <AppModal v-model="showModal" @close-modal="closeModals">
       <template #header>
-        <h3>{{ itemID ? (isDisabledForm ? 'Ko\'rish' : 'Tahrirlash') : 'Yangilik yaratish' }}</h3>
+        <h3>{{ itemID ? (isDisabledForm ? 'Ko\'rish' : 'Tahrirlash') : 'Hamkor yaratish' }}</h3>
       </template>
       <template #body>
         <VRow>
-          <!-- Title -->
+          <!-- Image (Upload) -->
           <VCol cols="12">
-            <VTextField v-bind="modalForm.title.uz" label="Sarlavha (UZ)" :error-messages="errors['title.uz']" :disabled="isDisabledForm" />
-          </VCol>
-          <VCol cols="12">
-            <VTextField v-bind="modalForm.title.ru" label="Sarlavha (RU)" :error-messages="errors['title.ru']" :disabled="isDisabledForm" />
-          </VCol>
-          <VCol cols="12">
-            <VTextField v-bind="modalForm.title.en" label="Sarlavha (EN)" :error-messages="errors['title.en']" :disabled="isDisabledForm" />
+            <FormUpload v-bind="modalForm.image" name="image" label="Logo rasm" upload-service-name="partners" :disabled="isDisabledForm" />
+            <span class="text-error text-caption">{{ errors['image'] }}</span>
           </VCol>
 
-          <!-- Content -->
-          <VCol cols="12">
-            <VTextarea v-bind="modalForm.content.uz" label="Kontent (UZ)" :error-messages="errors['content.uz']" :disabled="isDisabledForm" />
-          </VCol>
-          <VCol cols="12">
-            <VTextarea v-bind="modalForm.content.ru" label="Kontent (RU)" :error-messages="errors['content.ru']" :disabled="isDisabledForm" />
-          </VCol>
-          <VCol cols="12">
-            <VTextarea v-bind="modalForm.content.en" label="Kontent (EN)" :error-messages="errors['content.en']" :disabled="isDisabledForm" />
-          </VCol>
-
-          <!-- Category -->
+          <!-- Alt -->
           <VCol cols="12" md="4">
-            <VTextField v-bind="modalForm.category.uz" label="Kategoriya (UZ)" :error-messages="errors['category.uz']" :disabled="isDisabledForm" />
+            <VTextField v-bind="modalForm.alt.uz" label="Nomi (UZ)" :error-messages="errors['alt.uz']" :disabled="isDisabledForm" />
           </VCol>
           <VCol cols="12" md="4">
-            <VTextField v-bind="modalForm.category.ru" label="Kategoriya (RU)" :error-messages="errors['category.ru']" :disabled="isDisabledForm" />
+            <VTextField v-bind="modalForm.alt.ru" label="Nomi (RU)" :error-messages="errors['alt.ru']" :disabled="isDisabledForm" />
           </VCol>
           <VCol cols="12" md="4">
-            <VTextField v-bind="modalForm.category.en" label="Kategoriya (EN)" :error-messages="errors['category.en']" :disabled="isDisabledForm" />
+            <VTextField v-bind="modalForm.alt.en" label="Nomi (EN)" :error-messages="errors['alt.en']" :disabled="isDisabledForm" />
           </VCol>
 
-          <!-- Main Image (Upload) -->
+          <!-- Link -->
           <VCol cols="12">
-            <FormUpload v-bind="modalForm.mainImage" name="mainImage" label="Asosiy rasm" upload-service-name="news" :disabled="isDisabledForm" />
-            <span class="text-error text-caption">{{ errors['mainImage'] }}</span>
+            <VTextField v-bind="modalForm.link" label="Havola (URL)" placeholder="https://example.com" :error-messages="errors['link']" :disabled="isDisabledForm" />
           </VCol>
 
-          <!-- Video URL -->
-          <VCol cols="12">
-            <VTextField v-bind="modalForm.videoUrl" label="Video URL" :error-messages="errors['videoUrl']" :disabled="isDisabledForm" />
+          <!-- Order -->
+          <VCol cols="12" md="6">
+            <VTextField v-bind="modalForm.order" label="Tartib raqami" type="number" :error-messages="errors['order']" :disabled="isDisabledForm" />
           </VCol>
 
-          <!-- Is Published -->
-          <VCol cols="12">
-            <VSwitch v-model="isPublished" label="Chop etilsinmi?" :disabled="isDisabledForm" />
+          <!-- Is Active -->
+          <VCol cols="12" md="6">
+            <VSwitch v-model="isActive" label="Faolmi?" :disabled="isDisabledForm" />
           </VCol>
         </VRow>
       </template>
@@ -311,10 +276,10 @@ onMounted(() => {
 
     <DeleteModal v-model="isDeleteModal" @close-modal="closeDeleteModal">
       <template #header>
-        <h3>Yangilikni o'chirish</h3>
+        <h3>Hamkorni o'chirish</h3>
       </template>
       <template #body>
-        Haqiqatan ham bu yangilikni o'chirmoqchimisiz?
+        Haqiqatan ham bu hamkorni o'chirmoqchimisiz?
       </template>
       <template #footer>
         <div class="d-flex justify-end gap-2 mt-4">

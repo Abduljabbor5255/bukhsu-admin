@@ -40,6 +40,11 @@ const router = createRouter({
       component: () => import('@/pages/birthdays/Birthdays.vue'),
     },
     {
+      path: '/partners',
+      name: 'partners',
+      component: () => import('@/pages/partners/Partners.vue'),
+    },
+    {
       path: '/:catchAll(.*)',
       name: 'error-page',
       component: Error404,

@@ -2,7 +2,7 @@
     "info": {
         "_postman_id": "4157067d-fa8b-4988-ab3c-75a6457a7588",
         "name": "Bukhorcha API",
-        "description": "API collection for Bukhorcha Backend",
+        "description": "API collection for Bukhorcha Backend — Multilingual support (uz/ru/en)",
         "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
     },
     "item": [
@@ -165,320 +165,6 @@
                     ]
                 },
                 {
-                    "name": "Concerts",
-                    "item": [
-                        {
-                            "name": "Create Concert",
-                            "request": {
-                                "auth": {
-                                    "type": "bearer",
-                                    "bearer": [
-                                        {
-                                            "key": "token",
-                                            "value": "{{token}}",
-                                            "type": "string"
-                                        }
-                                    ]
-                                },
-                                "method": "POST",
-                                "header": [],
-                                "body": {
-                                    "mode": "raw",
-                                    "raw": "{\n    \"title\": {\n        \"uz\": \"Konsert nomi\",\n        \"ru\": \"Название концерта\",\n        \"en\": \"Concert Name\"\n    },\n    \"description\": {\n        \"uz\": \"Batafsil...\",\n        \"ru\": \"Подробно...\",\n        \"en\": \"Details...\"\n    },\n    \"location\": \"Buxoro\",\n    \"date\": \"2024-06-15T18:00:00.000Z\",\n    \"coverImage\": \"https://example.com/cover.jpg\",\n    \"isPublished\": true\n}",
-                                    "options": {
-                                        "raw": {
-                                            "language": "json"
-                                        }
-                                    }
-                                },
-                                "url": {
-                                    "raw": "{{base_url}}/admin/concerts/create",
-                                    "host": [
-                                        "{{base_url}}"
-                                    ],
-                                    "path": [
-                                        "admin",
-                                        "concerts",
-                                        "create"
-                                    ]
-                                }
-                            },
-                            "response": []
-                        },
-                        {
-                            "name": "List Concerts",
-                            "request": {
-                                "auth": {
-                                    "type": "bearer",
-                                    "bearer": [
-                                        {
-                                            "key": "token",
-                                            "value": "{{token}}",
-                                            "type": "string"
-                                        }
-                                    ]
-                                },
-                                "method": "POST",
-                                "header": [],
-                                "body": {
-                                    "mode": "raw",
-                                    "raw": "{\n    \"page\": 1,\n    \"limit\": 10\n}",
-                                    "options": {
-                                        "raw": {
-                                            "language": "json"
-                                        }
-                                    }
-                                },
-                                "url": {
-                                    "raw": "{{base_url}}/admin/concerts/list",
-                                    "host": [
-                                        "{{base_url}}"
-                                    ],
-                                    "path": [
-                                        "admin",
-                                        "concerts",
-                                        "list"
-                                    ]
-                                }
-                            },
-                            "response": []
-                        },
-                        {
-                            "name": "Update Concert",
-                            "request": {
-                                "auth": {
-                                    "type": "bearer",
-                                    "bearer": [
-                                        {
-                                            "key": "token",
-                                            "value": "{{token}}",
-                                            "type": "string"
-                                        }
-                                    ]
-                                },
-                                "method": "POST",
-                                "header": [],
-                                "body": {
-                                    "mode": "raw",
-                                    "raw": "{\n    \"id\": \"concert_id_here\",\n    \"title\": {\n        \"uz\": \"Yangilangan nom\"\n    }\n}",
-                                    "options": {
-                                        "raw": {
-                                            "language": "json"
-                                        }
-                                    }
-                                },
-                                "url": {
-                                    "raw": "{{base_url}}/admin/concerts/update",
-                                    "host": [
-                                        "{{base_url}}"
-                                    ],
-                                    "path": [
-                                        "admin",
-                                        "concerts",
-                                        "update"
-                                    ]
-                                }
-                            },
-                            "response": []
-                        },
-                        {
-                            "name": "Delete Concert",
-                            "request": {
-                                "auth": {
-                                    "type": "bearer",
-                                    "bearer": [
-                                        {
-                                            "key": "token",
-                                            "value": "{{token}}",
-                                            "type": "string"
-                                        }
-                                    ]
-                                },
-                                "method": "POST",
-                                "header": [],
-                                "body": {
-                                    "mode": "raw",
-                                    "raw": "{\n    \"id\": \"concert_id_here\"\n}",
-                                    "options": {
-                                        "raw": {
-                                            "language": "json"
-                                        }
-                                    }
-                                },
-                                "url": {
-                                    "raw": "{{base_url}}/admin/concerts/delete",
-                                    "host": [
-                                        "{{base_url}}"
-                                    ],
-                                    "path": [
-                                        "admin",
-                                        "concerts",
-                                        "delete"
-                                    ]
-                                }
-                            },
-                            "response": []
-                        }
-                    ]
-                },
-                {
-                    "name": "Management",
-                    "item": [
-                        {
-                            "name": "Create Management",
-                            "request": {
-                                "auth": {
-                                    "type": "bearer",
-                                    "bearer": [
-                                        {
-                                            "key": "token",
-                                            "value": "{{token}}",
-                                            "type": "string"
-                                        }
-                                    ]
-                                },
-                                "method": "POST",
-                                "header": [],
-                                "body": {
-                                    "mode": "raw",
-                                    "raw": "{\n    \"fullName\": \"Ism Familiya\",\n    \"position\": \"Direktor\",\n    \"bio\": \"Biografiya...\",\n    \"photo\": \"https://example.com/photo.jpg\",\n    \"order\": 1,\n    \"isActive\": true\n}",
-                                    "options": {
-                                        "raw": {
-                                            "language": "json"
-                                        }
-                                    }
-                                },
-                                "url": {
-                                    "raw": "{{base_url}}/admin/management/create",
-                                    "host": [
-                                        "{{base_url}}"
-                                    ],
-                                    "path": [
-                                        "admin",
-                                        "management",
-                                        "create"
-                                    ]
-                                }
-                            },
-                            "response": []
-                        },
-                        {
-                            "name": "List Management",
-                            "request": {
-                                "auth": {
-                                    "type": "bearer",
-                                    "bearer": [
-                                        {
-                                            "key": "token",
-                                            "value": "{{token}}",
-                                            "type": "string"
-                                        }
-                                    ]
-                                },
-                                "method": "POST",
-                                "header": [],
-                                "body": {
-                                    "mode": "raw",
-                                    "raw": "{\n    \"page\": 1,\n    \"limit\": 10\n}",
-                                    "options": {
-                                        "raw": {
-                                            "language": "json"
-                                        }
-                                    }
-                                },
-                                "url": {
-                                    "raw": "{{base_url}}/admin/management/list",
-                                    "host": [
-                                        "{{base_url}}"
-                                    ],
-                                    "path": [
-                                        "admin",
-                                        "management",
-                                        "list"
-                                    ]
-                                }
-                            },
-                            "response": []
-                        },
-                        {
-                            "name": "Update Management",
-                            "request": {
-                                "auth": {
-                                    "type": "bearer",
-                                    "bearer": [
-                                        {
-                                            "key": "token",
-                                            "value": "{{token}}",
-                                            "type": "string"
-                                        }
-                                    ]
-                                },
-                                "method": "POST",
-                                "header": [],
-                                "body": {
-                                    "mode": "raw",
-                                    "raw": "{\n    \"id\": \"management_id_here\",\n    \"fullName\": \"Yangilangan Ism\"\n}",
-                                    "options": {
-                                        "raw": {
-                                            "language": "json"
-                                        }
-                                    }
-                                },
-                                "url": {
-                                    "raw": "{{base_url}}/admin/management/update",
-                                    "host": [
-                                        "{{base_url}}"
-                                    ],
-                                    "path": [
-                                        "admin",
-                                        "management",
-                                        "update"
-                                    ]
-                                }
-                            },
-                            "response": []
-                        },
-                        {
-                            "name": "Delete Management",
-                            "request": {
-                                "auth": {
-                                    "type": "bearer",
-                                    "bearer": [
-                                        {
-                                            "key": "token",
-                                            "value": "{{token}}",
-                                            "type": "string"
-                                        }
-                                    ]
-                                },
-                                "method": "POST",
-                                "header": [],
-                                "body": {
-                                    "mode": "raw",
-                                    "raw": "{\n    \"id\": \"management_id_here\"\n}",
-                                    "options": {
-                                        "raw": {
-                                            "language": "json"
-                                        }
-                                    }
-                                },
-                                "url": {
-                                    "raw": "{{base_url}}/admin/management/delete",
-                                    "host": [
-                                        "{{base_url}}"
-                                    ],
-                                    "path": [
-                                        "admin",
-                                        "management",
-                                        "delete"
-                                    ]
-                                }
-                            },
-                            "response": []
-                        }
-                    ]
-                },
-                {
                     "name": "News",
                     "item": [
                         {
@@ -498,7 +184,7 @@
                                 "header": [],
                                 "body": {
                                     "mode": "raw",
-                                    "raw": "{\n    \"title\": {\n        \"uz\": \"Yangilik nomi\",\n        \"ru\": \"Заголовок новости\",\n        \"en\": \"News Title\"\n    },\n    \"content\": \"<p>Yangilik matni...</p>\",\n    \"mainImage\": \"https://example.com/image.jpg\",\n    \"videoUrl\": \"https://youtube.com/watch?v=...\",\n    \"isPublished\": true,\n    \"gallery\": [\"https://example.com/img1.jpg\"]\n}",
+                                    "raw": "{\n    \"title\": {\n        \"uz\": \"Yangilik nomi\",\n        \"ru\": \"Заголовок новости\",\n        \"en\": \"News Title\"\n    },\n    \"content\": {\n        \"uz\": \"<p>Yangilik matni...</p>\",\n        \"ru\": \"<p>Текст новости...</p>\",\n        \"en\": \"<p>News content...</p>\"\n    },\n    \"category\": {\n        \"uz\": \"Madaniyat\",\n        \"ru\": \"Культура\",\n        \"en\": \"Culture\"\n    },\n    \"mainImage\": \"https://example.com/image.jpg\",\n    \"videoUrl\": \"https://youtube.com/watch?v=...\",\n    \"isPublished\": true,\n    \"gallery\": [\"https://example.com/img1.jpg\"]\n}",
                                     "options": {
                                         "raw": {
                                             "language": "json"
@@ -574,7 +260,7 @@
                                 "header": [],
                                 "body": {
                                     "mode": "raw",
-                                    "raw": "{\n    \"id\": \"news_id_here\",\n    \"title\": {\n        \"uz\": \"Yangilangan yangilik\"\n    }\n}",
+                                    "raw": "{\n    \"id\": \"news_id_here\",\n    \"title\": {\n        \"uz\": \"Yangilangan yangilik\",\n        \"ru\": \"Обновленная новость\",\n        \"en\": \"Updated news\"\n    },\n    \"content\": {\n        \"uz\": \"<p>Yangilangan matn</p>\"\n    },\n    \"category\": {\n        \"uz\": \"Sport\",\n        \"ru\": \"Спорт\",\n        \"en\": \"Sport\"\n    }\n}",
                                     "options": {
                                         "raw": {
                                             "language": "json"
@@ -636,6 +322,634 @@
                     ]
                 },
                 {
+                    "name": "Tours",
+                    "item": [
+                        {
+                            "name": "Create Tour",
+                            "request": {
+                                "auth": {
+                                    "type": "bearer",
+                                    "bearer": [
+                                        {
+                                            "key": "token",
+                                            "value": "{{token}}",
+                                            "type": "string"
+                                        }
+                                    ]
+                                },
+                                "method": "POST",
+                                "header": [],
+                                "body": {
+                                    "mode": "raw",
+                                    "raw": "{\n    \"location\": {\n        \"uz\": \"Buxoro, Ark qal'asi\",\n        \"ru\": \"Бухара, крепость Арк\",\n        \"en\": \"Bukhara, Ark Fortress\"\n    },\n    \"country\": {\n        \"uz\": \"O'zbekiston\",\n        \"ru\": \"Узбекистан\",\n        \"en\": \"Uzbekistan\"\n    },\n    \"image\": \"https://example.com/tour.jpg\",\n    \"dateRange\": \"15-20 Iyun 2024\",\n    \"description\": {\n        \"uz\": \"Sayohat haqida batafsil...\",\n        \"ru\": \"Подробнее о путешествии...\",\n        \"en\": \"More about the tour...\"\n    },\n    \"isPublished\": true\n}",
+                                    "options": {
+                                        "raw": {
+                                            "language": "json"
+                                        }
+                                    }
+                                },
+                                "url": {
+                                    "raw": "{{base_url}}/admin/tours/create",
+                                    "host": [
+                                        "{{base_url}}"
+                                    ],
+                                    "path": [
+                                        "admin",
+                                        "tours",
+                                        "create"
+                                    ]
+                                }
+                            },
+                            "response": []
+                        },
+                        {
+                            "name": "List Tours",
+                            "request": {
+                                "auth": {
+                                    "type": "bearer",
+                                    "bearer": [
+                                        {
+                                            "key": "token",
+                                            "value": "{{token}}",
+                                            "type": "string"
+                                        }
+                                    ]
+                                },
+                                "method": "POST",
+                                "header": [],
+                                "body": {
+                                    "mode": "raw",
+                                    "raw": "{\n    \"page\": 1,\n    \"limit\": 10\n}",
+                                    "options": {
+                                        "raw": {
+                                            "language": "json"
+                                        }
+                                    }
+                                },
+                                "url": {
+                                    "raw": "{{base_url}}/admin/tours/list",
+                                    "host": [
+                                        "{{base_url}}"
+                                    ],
+                                    "path": [
+                                        "admin",
+                                        "tours",
+                                        "list"
+                                    ]
+                                }
+                            },
+                            "response": []
+                        },
+                        {
+                            "name": "Update Tour",
+                            "request": {
+                                "auth": {
+                                    "type": "bearer",
+                                    "bearer": [
+                                        {
+                                            "key": "token",
+                                            "value": "{{token}}",
+                                            "type": "string"
+                                        }
+                                    ]
+                                },
+                                "method": "POST",
+                                "header": [],
+                                "body": {
+                                    "mode": "raw",
+                                    "raw": "{\n    \"id\": \"tour_id_here\",\n    \"location\": {\n        \"uz\": \"Samarqand\",\n        \"ru\": \"Самарканд\",\n        \"en\": \"Samarkand\"\n    },\n    \"dateRange\": \"1-5 Iyul 2024\"\n}",
+                                    "options": {
+                                        "raw": {
+                                            "language": "json"
+                                        }
+                                    }
+                                },
+                                "url": {
+                                    "raw": "{{base_url}}/admin/tours/update",
+                                    "host": [
+                                        "{{base_url}}"
+                                    ],
+                                    "path": [
+                                        "admin",
+                                        "tours",
+                                        "update"
+                                    ]
+                                }
+                            },
+                            "response": []
+                        },
+                        {
+                            "name": "Delete Tour",
+                            "request": {
+                                "auth": {
+                                    "type": "bearer",
+                                    "bearer": [
+                                        {
+                                            "key": "token",
+                                            "value": "{{token}}",
+                                            "type": "string"
+                                        }
+                                    ]
+                                },
+                                "method": "POST",
+                                "header": [],
+                                "body": {
+                                    "mode": "raw",
+                                    "raw": "{\n    \"id\": \"tour_id_here\"\n}",
+                                    "options": {
+                                        "raw": {
+                                            "language": "json"
+                                        }
+                                    }
+                                },
+                                "url": {
+                                    "raw": "{{base_url}}/admin/tours/delete",
+                                    "host": [
+                                        "{{base_url}}"
+                                    ],
+                                    "path": [
+                                        "admin",
+                                        "tours",
+                                        "delete"
+                                    ]
+                                }
+                            },
+                            "response": []
+                        }
+                    ]
+                },
+                {
+                    "name": "Management",
+                    "item": [
+                        {
+                            "name": "Create Management",
+                            "request": {
+                                "auth": {
+                                    "type": "bearer",
+                                    "bearer": [
+                                        {
+                                            "key": "token",
+                                            "value": "{{token}}",
+                                            "type": "string"
+                                        }
+                                    ]
+                                },
+                                "method": "POST",
+                                "header": [],
+                                "body": {
+                                    "mode": "raw",
+                                    "raw": "{\n    \"fullName\": {\n        \"uz\": \"Abdullayev Abdulla\",\n        \"ru\": \"Абдуллаев Абдулла\",\n        \"en\": \"Abdullayev Abdulla\"\n    },\n    \"position\": {\n        \"uz\": \"Direktor\",\n        \"ru\": \"Директор\",\n        \"en\": \"Director\"\n    },\n    \"bio\": {\n        \"uz\": \"Qisqacha biografiya...\",\n        \"ru\": \"Краткая биография...\",\n        \"en\": \"Short biography...\"\n    },\n    \"photo\": \"https://example.com/photo.jpg\",\n    \"reception\": \"Dushanba-Juma 09:00-17:00\",\n    \"phone\": \"+998 65 221 00 00\",\n    \"order\": 1,\n    \"isActive\": true\n}",
+                                    "options": {
+                                        "raw": {
+                                            "language": "json"
+                                        }
+                                    }
+                                },
+                                "url": {
+                                    "raw": "{{base_url}}/admin/management/create",
+                                    "host": [
+                                        "{{base_url}}"
+                                    ],
+                                    "path": [
+                                        "admin",
+                                        "management",
+                                        "create"
+                                    ]
+                                }
+                            },
+                            "response": []
+                        },
+                        {
+                            "name": "List Management",
+                            "request": {
+                                "auth": {
+                                    "type": "bearer",
+                                    "bearer": [
+                                        {
+                                            "key": "token",
+                                            "value": "{{token}}",
+                                            "type": "string"
+                                        }
+                                    ]
+                                },
+                                "method": "POST",
+                                "header": [],
+                                "body": {
+                                    "mode": "raw",
+                                    "raw": "{\n    \"page\": 1,\n    \"limit\": 10\n}",
+                                    "options": {
+                                        "raw": {
+                                            "language": "json"
+                                        }
+                                    }
+                                },
+                                "url": {
+                                    "raw": "{{base_url}}/admin/management/list",
+                                    "host": [
+                                        "{{base_url}}"
+                                    ],
+                                    "path": [
+                                        "admin",
+                                        "management",
+                                        "list"
+                                    ]
+                                }
+                            },
+                            "response": []
+                        },
+                        {
+                            "name": "Update Management",
+                            "request": {
+                                "auth": {
+                                    "type": "bearer",
+                                    "bearer": [
+                                        {
+                                            "key": "token",
+                                            "value": "{{token}}",
+                                            "type": "string"
+                                        }
+                                    ]
+                                },
+                                "method": "POST",
+                                "header": [],
+                                "body": {
+                                    "mode": "raw",
+                                    "raw": "{\n    \"id\": \"management_id_here\",\n    \"fullName\": {\n        \"uz\": \"Yangilangan Ism\",\n        \"ru\": \"Обновленное имя\",\n        \"en\": \"Updated Name\"\n    },\n    \"reception\": \"Dushanba-Juma 10:00-18:00\",\n    \"phone\": \"+998 65 222 00 00\"\n}",
+                                    "options": {
+                                        "raw": {
+                                            "language": "json"
+                                        }
+                                    }
+                                },
+                                "url": {
+                                    "raw": "{{base_url}}/admin/management/update",
+                                    "host": [
+                                        "{{base_url}}"
+                                    ],
+                                    "path": [
+                                        "admin",
+                                        "management",
+                                        "update"
+                                    ]
+                                }
+                            },
+                            "response": []
+                        },
+                        {
+                            "name": "Delete Management",
+                            "request": {
+                                "auth": {
+                                    "type": "bearer",
+                                    "bearer": [
+                                        {
+                                            "key": "token",
+                                            "value": "{{token}}",
+                                            "type": "string"
+                                        }
+                                    ]
+                                },
+                                "method": "POST",
+                                "header": [],
+                                "body": {
+                                    "mode": "raw",
+                                    "raw": "{\n    \"id\": \"management_id_here\"\n}",
+                                    "options": {
+                                        "raw": {
+                                            "language": "json"
+                                        }
+                                    }
+                                },
+                                "url": {
+                                    "raw": "{{base_url}}/admin/management/delete",
+                                    "host": [
+                                        "{{base_url}}"
+                                    ],
+                                    "path": [
+                                        "admin",
+                                        "management",
+                                        "delete"
+                                    ]
+                                }
+                            },
+                            "response": []
+                        }
+                    ]
+                },
+                {
+                    "name": "Birthdays",
+                    "item": [
+                        {
+                            "name": "Create Birthday",
+                            "request": {
+                                "auth": {
+                                    "type": "bearer",
+                                    "bearer": [
+                                        {
+                                            "key": "token",
+                                            "value": "{{token}}",
+                                            "type": "string"
+                                        }
+                                    ]
+                                },
+                                "method": "POST",
+                                "header": [],
+                                "body": {
+                                    "mode": "raw",
+                                    "raw": "{\n    \"name\": {\n        \"uz\": \"Abdullayev Abdulla\",\n        \"ru\": \"Абдуллаев Абдулла\",\n        \"en\": \"Abdullayev Abdulla\"\n    },\n    \"role\": {\n        \"uz\": \"Direktor\",\n        \"ru\": \"Директор\",\n        \"en\": \"Director\"\n    },\n    \"image\": \"https://example.com/photo.jpg\",\n    \"birthDate\": \"1990-05-15\",\n    \"message\": {\n        \"uz\": \"Tug'ilgan kuningiz bilan!\",\n        \"ru\": \"С днем рождения!\",\n        \"en\": \"Happy Birthday!\"\n    },\n    \"isActive\": true\n}",
+                                    "options": {
+                                        "raw": {
+                                            "language": "json"
+                                        }
+                                    }
+                                },
+                                "url": {
+                                    "raw": "{{base_url}}/admin/birthdays/create",
+                                    "host": [
+                                        "{{base_url}}"
+                                    ],
+                                    "path": [
+                                        "admin",
+                                        "birthdays",
+                                        "create"
+                                    ]
+                                }
+                            },
+                            "response": []
+                        },
+                        {
+                            "name": "List Birthdays",
+                            "request": {
+                                "auth": {
+                                    "type": "bearer",
+                                    "bearer": [
+                                        {
+                                            "key": "token",
+                                            "value": "{{token}}",
+                                            "type": "string"
+                                        }
+                                    ]
+                                },
+                                "method": "POST",
+                                "header": [],
+                                "body": {
+                                    "mode": "raw",
+                                    "raw": "{\n    \"page\": 1,\n    \"limit\": 10\n}",
+                                    "options": {
+                                        "raw": {
+                                            "language": "json"
+                                        }
+                                    }
+                                },
+                                "url": {
+                                    "raw": "{{base_url}}/admin/birthdays/list",
+                                    "host": [
+                                        "{{base_url}}"
+                                    ],
+                                    "path": [
+                                        "admin",
+                                        "birthdays",
+                                        "list"
+                                    ]
+                                }
+                            },
+                            "response": []
+                        },
+                        {
+                            "name": "Update Birthday",
+                            "request": {
+                                "auth": {
+                                    "type": "bearer",
+                                    "bearer": [
+                                        {
+                                            "key": "token",
+                                            "value": "{{token}}",
+                                            "type": "string"
+                                        }
+                                    ]
+                                },
+                                "method": "POST",
+                                "header": [],
+                                "body": {
+                                    "mode": "raw",
+                                    "raw": "{\n    \"id\": \"birthday_id_here\",\n    \"name\": {\n        \"uz\": \"Yangilangan Ism\",\n        \"ru\": \"Обновленное имя\",\n        \"en\": \"Updated Name\"\n    },\n    \"message\": {\n        \"uz\": \"Yangilangan tabrik!\"\n    }\n}",
+                                    "options": {
+                                        "raw": {
+                                            "language": "json"
+                                        }
+                                    }
+                                },
+                                "url": {
+                                    "raw": "{{base_url}}/admin/birthdays/update",
+                                    "host": [
+                                        "{{base_url}}"
+                                    ],
+                                    "path": [
+                                        "admin",
+                                        "birthdays",
+                                        "update"
+                                    ]
+                                }
+                            },
+                            "response": []
+                        },
+                        {
+                            "name": "Delete Birthday",
+                            "request": {
+                                "auth": {
+                                    "type": "bearer",
+                                    "bearer": [
+                                        {
+                                            "key": "token",
+                                            "value": "{{token}}",
+                                            "type": "string"
+                                        }
+                                    ]
+                                },
+                                "method": "POST",
+                                "header": [],
+                                "body": {
+                                    "mode": "raw",
+                                    "raw": "{\n    \"id\": \"birthday_id_here\"\n}",
+                                    "options": {
+                                        "raw": {
+                                            "language": "json"
+                                        }
+                                    }
+                                },
+                                "url": {
+                                    "raw": "{{base_url}}/admin/birthdays/delete",
+                                    "host": [
+                                        "{{base_url}}"
+                                    ],
+                                    "path": [
+                                        "admin",
+                                        "birthdays",
+                                        "delete"
+                                    ]
+                                }
+                            },
+                            "response": []
+                        }
+                    ]
+                },
+                {
+                    "name": "Partners",
+                    "item": [
+                        {
+                            "name": "Create Partner",
+                            "request": {
+                                "auth": {
+                                    "type": "bearer",
+                                    "bearer": [
+                                        {
+                                            "key": "token",
+                                            "value": "{{token}}",
+                                            "type": "string"
+                                        }
+                                    ]
+                                },
+                                "method": "POST",
+                                "header": [],
+                                "body": {
+                                    "mode": "raw",
+                                    "raw": "{\n    \"image\": \"https://example.com/partner-logo.png\",\n    \"alt\": {\n        \"uz\": \"HamkorBank\",\n        \"ru\": \"ХамкорБанк\",\n        \"en\": \"HamkorBank\"\n    },\n    \"link\": \"https://hamkorbank.uz\",\n    \"order\": 1,\n    \"isActive\": true\n}",
+                                    "options": {
+                                        "raw": {
+                                            "language": "json"
+                                        }
+                                    }
+                                },
+                                "url": {
+                                    "raw": "{{base_url}}/admin/partners/create",
+                                    "host": [
+                                        "{{base_url}}"
+                                    ],
+                                    "path": [
+                                        "admin",
+                                        "partners",
+                                        "create"
+                                    ]
+                                }
+                            },
+                            "response": []
+                        },
+                        {
+                            "name": "List Partners",
+                            "request": {
+                                "auth": {
+                                    "type": "bearer",
+                                    "bearer": [
+                                        {
+                                            "key": "token",
+                                            "value": "{{token}}",
+                                            "type": "string"
+                                        }
+                                    ]
+                                },
+                                "method": "POST",
+                                "header": [],
+                                "body": {
+                                    "mode": "raw",
+                                    "raw": "{\n    \"page\": 1,\n    \"limit\": 10\n}",
+                                    "options": {
+                                        "raw": {
+                                            "language": "json"
+                                        }
+                                    }
+                                },
+                                "url": {
+                                    "raw": "{{base_url}}/admin/partners/list",
+                                    "host": [
+                                        "{{base_url}}"
+                                    ],
+                                    "path": [
+                                        "admin",
+                                        "partners",
+                                        "list"
+                                    ]
+                                }
+                            },
+                            "response": []
+                        },
+                        {
+                            "name": "Update Partner",
+                            "request": {
+                                "auth": {
+                                    "type": "bearer",
+                                    "bearer": [
+                                        {
+                                            "key": "token",
+                                            "value": "{{token}}",
+                                            "type": "string"
+                                        }
+                                    ]
+                                },
+                                "method": "POST",
+                                "header": [],
+                                "body": {
+                                    "mode": "raw",
+                                    "raw": "{\n    \"id\": \"partner_id_here\",\n    \"alt\": {\n        \"uz\": \"Yangilangan nom\",\n        \"ru\": \"Обновленное название\",\n        \"en\": \"Updated name\"\n    },\n    \"link\": \"https://updated-link.com\"\n}",
+                                    "options": {
+                                        "raw": {
+                                            "language": "json"
+                                        }
+                                    }
+                                },
+                                "url": {
+                                    "raw": "{{base_url}}/admin/partners/update",
+                                    "host": [
+                                        "{{base_url}}"
+                                    ],
+                                    "path": [
+                                        "admin",
+                                        "partners",
+                                        "update"
+                                    ]
+                                }
+                            },
+                            "response": []
+                        },
+                        {
+                            "name": "Delete Partner",
+                            "request": {
+                                "auth": {
+                                    "type": "bearer",
+                                    "bearer": [
+                                        {
+                                            "key": "token",
+                                            "value": "{{token}}",
+                                            "type": "string"
+                                        }
+                                    ]
+                                },
+                                "method": "POST",
+                                "header": [],
+                                "body": {
+                                    "mode": "raw",
+                                    "raw": "{\n    \"id\": \"partner_id_here\"\n}",
+                                    "options": {
+                                        "raw": {
+                                            "language": "json"
+                                        }
+                                    }
+                                },
+                                "url": {
+                                    "raw": "{{base_url}}/admin/partners/delete",
+                                    "host": [
+                                        "{{base_url}}"
+                                    ],
+                                    "path": [
+                                        "admin",
+                                        "partners",
+                                        "delete"
+                                    ]
+                                }
+                            },
+                            "response": []
+                        }
+                    ]
+                },
+                {
                     "name": "Upload",
                     "item": [
                         {
@@ -676,7 +990,7 @@
                                         {
                                             "key": "folder",
                                             "value": "news",
-                                            "description": "news | concerts | management"
+                                            "description": "news | tours | management | birthdays | partners"
                                         }
                                     ]
                                 }
@@ -691,109 +1005,6 @@
             "name": "Public",
             "item": [
                 {
-                    "name": "Concerts",
-                    "item": [
-                        {
-                            "name": "List Concerts",
-                            "request": {
-                                "method": "POST",
-                                "header": [
-                                    {
-                                        "key": "accept-language",
-                                        "value": "uz",
-                                        "type": "text"
-                                    }
-                                ],
-                                "body": {
-                                    "mode": "raw",
-                                    "raw": "{\n    \"page\": 1,\n    \"limit\": 10\n}",
-                                    "options": {
-                                        "raw": {
-                                            "language": "json"
-                                        }
-                                    }
-                                },
-                                "url": {
-                                    "raw": "{{base_url}}/concerts/list",
-                                    "host": [
-                                        "{{base_url}}"
-                                    ],
-                                    "path": [
-                                        "concerts",
-                                        "list"
-                                    ]
-                                }
-                            },
-                            "response": []
-                        },
-                        {
-                            "name": "Get Concert",
-                            "request": {
-                                "method": "POST",
-                                "header": [
-                                    {
-                                        "key": "accept-language",
-                                        "value": "uz",
-                                        "type": "text"
-                                    }
-                                ],
-                                "body": {
-                                    "mode": "raw",
-                                    "raw": "{\n    \"id\": \"concert_id_here\"\n}",
-                                    "options": {
-                                        "raw": {
-                                            "language": "json"
-                                        }
-                                    }
-                                },
-                                "url": {
-                                    "raw": "{{base_url}}/concerts/get",
-                                    "host": [
-                                        "{{base_url}}"
-                                    ],
-                                    "path": [
-                                        "concerts",
-                                        "get"
-                                    ]
-                                }
-                            },
-                            "response": []
-                        }
-                    ]
-                },
-                {
-                    "name": "Management",
-                    "item": [
-                        {
-                            "name": "List Management",
-                            "request": {
-                                "method": "POST",
-                                "header": [],
-                                "body": {
-                                    "mode": "raw",
-                                    "raw": "{\n    \"page\": 1,\n    \"limit\": 10\n}",
-                                    "options": {
-                                        "raw": {
-                                            "language": "json"
-                                        }
-                                    }
-                                },
-                                "url": {
-                                    "raw": "{{base_url}}/management/list",
-                                    "host": [
-                                        "{{base_url}}"
-                                    ],
-                                    "path": [
-                                        "management",
-                                        "list"
-                                    ]
-                                }
-                            },
-                            "response": []
-                        }
-                    ]
-                },
-                {
                     "name": "News",
                     "item": [
                         {
@@ -804,7 +1015,8 @@
                                     {
                                         "key": "accept-language",
                                         "value": "uz",
-                                        "type": "text"
+                                        "type": "text",
+                                        "description": "uz | ru | en (default: uz)"
                                     }
                                 ],
                                 "body": {
@@ -837,7 +1049,8 @@
                                     {
                                         "key": "accept-language",
                                         "value": "uz",
-                                        "type": "text"
+                                        "type": "text",
+                                        "description": "uz | ru | en (default: uz)"
                                     }
                                 ],
                                 "body": {
@@ -857,6 +1070,196 @@
                                     "path": [
                                         "news",
                                         "get"
+                                    ]
+                                }
+                            },
+                            "response": []
+                        }
+                    ]
+                },
+                {
+                    "name": "Tours",
+                    "item": [
+                        {
+                            "name": "List Tours",
+                            "request": {
+                                "method": "POST",
+                                "header": [
+                                    {
+                                        "key": "accept-language",
+                                        "value": "uz",
+                                        "type": "text",
+                                        "description": "uz | ru | en (default: uz)"
+                                    }
+                                ],
+                                "body": {
+                                    "mode": "raw",
+                                    "raw": "{\n    \"page\": 1,\n    \"limit\": 10\n}",
+                                    "options": {
+                                        "raw": {
+                                            "language": "json"
+                                        }
+                                    }
+                                },
+                                "url": {
+                                    "raw": "{{base_url}}/tours/list",
+                                    "host": [
+                                        "{{base_url}}"
+                                    ],
+                                    "path": [
+                                        "tours",
+                                        "list"
+                                    ]
+                                }
+                            },
+                            "response": []
+                        },
+                        {
+                            "name": "Get Tour",
+                            "request": {
+                                "method": "POST",
+                                "header": [
+                                    {
+                                        "key": "accept-language",
+                                        "value": "uz",
+                                        "type": "text",
+                                        "description": "uz | ru | en (default: uz)"
+                                    }
+                                ],
+                                "body": {
+                                    "mode": "raw",
+                                    "raw": "{\n    \"id\": \"tour_id_here\"\n}",
+                                    "options": {
+                                        "raw": {
+                                            "language": "json"
+                                        }
+                                    }
+                                },
+                                "url": {
+                                    "raw": "{{base_url}}/tours/get",
+                                    "host": [
+                                        "{{base_url}}"
+                                    ],
+                                    "path": [
+                                        "tours",
+                                        "get"
+                                    ]
+                                }
+                            },
+                            "response": []
+                        }
+                    ]
+                },
+                {
+                    "name": "Management",
+                    "item": [
+                        {
+                            "name": "List Management",
+                            "request": {
+                                "method": "POST",
+                                "header": [
+                                    {
+                                        "key": "accept-language",
+                                        "value": "uz",
+                                        "type": "text",
+                                        "description": "uz | ru | en (default: uz)"
+                                    }
+                                ],
+                                "body": {
+                                    "mode": "raw",
+                                    "raw": "{\n    \"page\": 1,\n    \"limit\": 10\n}",
+                                    "options": {
+                                        "raw": {
+                                            "language": "json"
+                                        }
+                                    }
+                                },
+                                "url": {
+                                    "raw": "{{base_url}}/management/list",
+                                    "host": [
+                                        "{{base_url}}"
+                                    ],
+                                    "path": [
+                                        "management",
+                                        "list"
+                                    ]
+                                }
+                            },
+                            "response": []
+                        }
+                    ]
+                },
+                {
+                    "name": "Birthdays",
+                    "item": [
+                        {
+                            "name": "List Birthdays",
+                            "request": {
+                                "method": "POST",
+                                "header": [
+                                    {
+                                        "key": "accept-language",
+                                        "value": "uz",
+                                        "type": "text",
+                                        "description": "uz | ru | en (default: uz)"
+                                    }
+                                ],
+                                "body": {
+                                    "mode": "raw",
+                                    "raw": "{\n    \"page\": 1,\n    \"limit\": 10\n}",
+                                    "options": {
+                                        "raw": {
+                                            "language": "json"
+                                        }
+                                    }
+                                },
+                                "url": {
+                                    "raw": "{{base_url}}/birthdays/list",
+                                    "host": [
+                                        "{{base_url}}"
+                                    ],
+                                    "path": [
+                                        "birthdays",
+                                        "list"
+                                    ]
+                                }
+                            },
+                            "response": []
+                        }
+                    ]
+                },
+                {
+                    "name": "Partners",
+                    "item": [
+                        {
+                            "name": "List Partners",
+                            "request": {
+                                "method": "POST",
+                                "header": [
+                                    {
+                                        "key": "accept-language",
+                                        "value": "uz",
+                                        "type": "text",
+                                        "description": "uz | ru | en (default: uz)"
+                                    }
+                                ],
+                                "body": {
+                                    "mode": "raw",
+                                    "raw": "{\n    \"page\": 1,\n    \"limit\": 10\n}",
+                                    "options": {
+                                        "raw": {
+                                            "language": "json"
+                                        }
+                                    }
+                                },
+                                "url": {
+                                    "raw": "{{base_url}}/partners/list",
+                                    "host": [
+                                        "{{base_url}}"
+                                    ],
+                                    "path": [
+                                        "partners",
+                                        "list"
                                     ]
                                 }
                             },

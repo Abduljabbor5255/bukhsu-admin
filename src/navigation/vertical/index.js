@@ -44,4 +44,13 @@ export default [
       icon: 'tabler-cake',
     },
   },
+  {
+    title: 'Hamkorlar',
+    to: {
+      name: 'partners',
+    },
+    icon: {
+      icon: 'tabler-handshake',
+    },
+  },
 ]

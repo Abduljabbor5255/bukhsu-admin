@@ -27,48 +27,65 @@ const isSnackbarVisible = ref(false)
 const snackbarText = ref("")
 const itemID = ref(null)
 const btnLoading = ref(false)
+const isActive = ref(true)
 
 const headers = [
   { title: 'ID', key: 'id', sortable: false },
-  { title: 'Ism Familiya', key: 'full_name', sortable: false },
+  { title: 'To\'liq ism', key: 'fullName', sortable: false },
   { title: 'Lavozim', key: 'position', sortable: false },
+  { title: 'Telefon', key: 'phone', sortable: false },
+  { title: 'Tartib', key: 'order', sortable: false },
+  { title: 'Holat', key: 'isActive', sortable: false },
   { title: 'Amallar', key: 'actions', sortable: false },
 ]
 
+const multiLangObj = () => yup.object({
+  uz: yup.string().required('Majburiy maydon'),
+  ru: yup.string().required('Majburiy maydon'),
+  en: yup.string().required('Majburiy maydon'),
+})
+
 const { values, defineComponentBinds, handleSubmit, resetForm, setValues, errors } = useForm({
+  initialValues: {
+    fullName: { uz: '', ru: '', en: '' },
+    position: { uz: '', ru: '', en: '' },
+    bio: { uz: '', ru: '', en: '' },
+    photo: null,
+    reception: '',
+    phone: '',
+    order: 1,
+  },
   validationSchema: toTypedSchema(yup.object({
-    first_name: yup.string().required('Majburiy maydon'),
-    last_name: yup.string().required('Majburiy maydon'),
-    work_time: yup.string().required('Majburiy maydon'),
-    position: yup.object({
-      uz: yup.string().required('Majburiy maydon'),
-      ru: yup.string().required('Majburiy maydon'),
-      en: yup.string().required('Majburiy maydon'),
-    }),
-    text: yup.object({
-      uz: yup.string().required('Majburiy maydon'),
-      ru: yup.string().required('Majburiy maydon'),
-      en: yup.string().required('Majburiy maydon'),
-    }),
-    image_id: yup.number().required('Majburiy maydon'),
+    fullName: multiLangObj(),
+    position: multiLangObj(),
+    bio: multiLangObj(),
+    photo: yup.number().required('Majburiy maydon'),
+    reception: yup.string().required('Majburiy maydon'),
+    phone: yup.string().required('Majburiy maydon'),
+    order: yup.number().required('Majburiy maydon').default(1),
   })),
 })
 
 const modalForm = {
-  first_name: defineComponentBinds('first_name'),
-  last_name: defineComponentBinds('last_name'),
-  work_time: defineComponentBinds('work_time'),
+  fullName: {
+    uz: defineComponentBinds('fullName.uz'),
+    ru: defineComponentBinds('fullName.ru'),
+    en: defineComponentBinds('fullName.en'),
+  },
   position: {
     uz: defineComponentBinds('position.uz'),
     ru: defineComponentBinds('position.ru'),
     en: defineComponentBinds('position.en'),
   },
-  text: {
-    uz: defineComponentBinds('text.uz'),
-    ru: defineComponentBinds('text.ru'),
-    en: defineComponentBinds('text.en'),
+  bio: {
+    uz: defineComponentBinds('bio.uz'),
+    ru: defineComponentBinds('bio.ru'),
+    en: defineComponentBinds('bio.en'),
   },
-  image_id: defineComponentBinds('image_id'),
+  photo: defineComponentBinds('photo'),
+  reception: defineComponentBinds('reception'),
+  phone: defineComponentBinds('phone'),
+  order: defineComponentBinds('order'),
 }
 
 async function fetchItems() {
@@ -95,14 +112,17 @@ async function fetchOneItem(id, mode = 'edit') {
   startFetching()
   try {
     const { data } = await managementApi.findOne({ params: { id } })
+    const r = data.result
     setValues({
-      first_name: data.result.first_name,
-      last_name: data.result.last_name,
-      work_time: data.result.work_time,
-      position: data.result.position,
-      text: data.result.text,
-      image_id: data.result.image ? data.result.image.id : null,
+      fullName: r.fullName || { uz: '', ru: '', en: '' },
+      position: r.position || { uz: '', ru: '', en: '' },
+      bio: r.bio || { uz: '', ru: '', en: '' },
+      photo: r.photo ? (typeof r.photo === 'object' ? r.photo.id : r.photo) : null,
+      reception: r.reception || '',
+      phone: r.phone || '',
+      order: r.order || 1,
     })
+    isActive.value = r.isActive !== undefined ? r.isActive : true
     showModal.value = true
   } catch (e) {
     console.error(e)
@@ -114,11 +134,15 @@ async function fetchOneItem(id, mode = 'edit') {
 const submitItem = handleSubmit(async (formValues) => {
   btnLoading.value = true
   try {
+    const payload = {
+      ...formValues,
+      isActive: isActive.value,
+    }
     if (itemID.value) {
-      await managementApi.update({ params: { id: itemID.value, ...formValues } })
+      await managementApi.update({ params: { id: itemID.value, ...payload } })
       snackbarText.value = "Ma'lumot muvaffaqiyatli yangilandi"
     } else {
-      await managementApi.create({ params: formValues })
+      await managementApi.create({ params: payload })
       snackbarText.value = "Ma'lumot muvaffaqiyatli yaratildi"
     }
     isSnackbarVisible.value = true
@@ -150,6 +174,7 @@ function openCreateModal() {
   resetForm()
   itemID.value = null
   isDisabledForm.value = false
+  isActive.value = true
   showModal.value = true
 }
 
@@ -191,12 +216,18 @@ onMounted(() => {
         :loading="loading"
         class="text-no-wrap"
       >
-        <template #item.full_name="{ item }">
-          {{ item.raw.first_name }} {{ item.raw.last_name }}
+        <template #item.fullName="{ item }">
+          {{ getValueMatchLocale(item.raw.fullName) }}
         </template>
 
         <template #item.position="{ item }">
           {{ getValueMatchLocale(item.raw.position) }}
+        </template>
+
+        <template #item.isActive="{ item }">
+          <VChip :color="item.raw.isActive ? 'success' : 'warning'" size="small">
+            {{ item.raw.isActive ? 'Faol' : 'Nofaol' }}
+          </VChip>
         </template>
 
         <template #item.actions="{ item }">
@@ -227,38 +258,63 @@ onMounted(() => {
       </template>
       <template #body>
         <VRow>
-          <VCol cols="12" md="6">
-            <VTextField v-bind="modalForm.first_name" label="Ism" :error-messages="errors['first_name']" :disabled="isDisabledForm" />
+          <!-- Full Name -->
+          <VCol cols="12" md="4">
+            <VTextField v-bind="modalForm.fullName.uz" label="To'liq ism (UZ)" :error-messages="errors['fullName.uz']" :disabled="isDisabledForm" />
           </VCol>
-          <VCol cols="12" md="6">
-            <VTextField v-bind="modalForm.last_name" label="Familiya" :error-messages="errors['last_name']" :disabled="isDisabledForm" />
+          <VCol cols="12" md="4">
+            <VTextField v-bind="modalForm.fullName.ru" label="To'liq ism (RU)" :error-messages="errors['fullName.ru']" :disabled="isDisabledForm" />
           </VCol>
-          <VCol cols="12">
-            <VTextField v-bind="modalForm.work_time" label="Ish vaqti" :error-messages="errors['work_time']" :disabled="isDisabledForm" />
+          <VCol cols="12" md="4">
+            <VTextField v-bind="modalForm.fullName.en" label="To'liq ism (EN)" :error-messages="errors['fullName.en']" :disabled="isDisabledForm" />
           </VCol>
 
-          <VCol cols="12">
+          <!-- Position -->
+          <VCol cols="12" md="4">
             <VTextField v-bind="modalForm.position.uz" label="Lavozim (UZ)" :error-messages="errors['position.uz']" :disabled="isDisabledForm" />
           </VCol>
-          <VCol cols="12">
+          <VCol cols="12" md="4">
             <VTextField v-bind="modalForm.position.ru" label="Lavozim (RU)" :error-messages="errors['position.ru']" :disabled="isDisabledForm" />
           </VCol>
-          <VCol cols="12">
+          <VCol cols="12" md="4">
             <VTextField v-bind="modalForm.position.en" label="Lavozim (EN)" :error-messages="errors['position.en']" :disabled="isDisabledForm" />
           </VCol>
 
+          <!-- Bio -->
           <VCol cols="12">
-            <VTextarea v-bind="modalForm.text.uz" label="Matn (UZ)" :error-messages="errors['text.uz']" :disabled="isDisabledForm" />
+            <VTextarea v-bind="modalForm.bio.uz" label="Biografiya (UZ)" :error-messages="errors['bio.uz']" :disabled="isDisabledForm" />
           </VCol>
           <VCol cols="12">
-            <VTextarea v-bind="modalForm.text.ru" label="Matn (RU)" :error-messages="errors['text.ru']" :disabled="isDisabledForm" />
+            <VTextarea v-bind="modalForm.bio.ru" label="Biografiya (RU)" :error-messages="errors['bio.ru']" :disabled="isDisabledForm" />
           </VCol>
           <VCol cols="12">
-            <VTextarea v-bind="modalForm.text.en" label="Matn (EN)" :error-messages="errors['text.en']" :disabled="isDisabledForm" />
+            <VTextarea v-bind="modalForm.bio.en" label="Biografiya (EN)" :error-messages="errors['bio.en']" :disabled="isDisabledForm" />
           </VCol>
 
+          <!-- Photo (Upload) -->
           <VCol cols="12">
-            <FormUpload v-bind="modalForm.image_id" name="image" label="Rasm" upload-service-name="management" :disabled="isDisabledForm" />
+            <FormUpload v-bind="modalForm.photo" name="photo" label="Rasm" upload-service-name="management" :disabled="isDisabledForm" />
+            <span class="text-error text-caption">{{ errors['photo'] }}</span>
+          </VCol>
+
+          <!-- Reception -->
+          <VCol cols="12" md="6">
+            <VTextField v-bind="modalForm.reception" label="Qabul vaqti" placeholder="Dushanba-Juma 09:00-17:00" :error-messages="errors['reception']" :disabled="isDisabledForm" />
+          </VCol>
+
+          <!-- Phone -->
+          <VCol cols="12" md="6">
+            <VTextField v-bind="modalForm.phone" label="Telefon" placeholder="+998 65 221 00 00" :error-messages="errors['phone']" :disabled="isDisabledForm" />
+          </VCol>
+
+          <!-- Order -->
+          <VCol cols="12" md="6">
+            <VTextField v-bind="modalForm.order" label="Tartib raqami" type="number" :error-messages="errors['order']" :disabled="isDisabledForm" />
+          </VCol>
+
+          <!-- Is Active -->
+          <VCol cols="12" md="6">
+            <VSwitch v-model="isActive" label="Faolmi?" :disabled="isDisabledForm" />
           </VCol>
         </VRow>
       </template>

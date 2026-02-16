@@ -10,8 +10,8 @@ import * as yup from 'yup'
 
 import AppModal from "@/components/AppModal.vue"
 import DeleteModal from "@/components/DeleteModal.vue"
+import FormUpload from "@/components/form/FormUpload.vue"
 import BasePagination from "@/components/pagination/BasePagination.vue"
-import AppDateTimePicker from "@core/components/app-form-elements/AppDateTimePicker.vue"
 
 const { loading, startFetching, finishFetching } = useLoading()
 
@@ -27,22 +27,37 @@ const isSnackbarVisible = ref(false)
 const snackbarText = ref("")
 const itemID = ref(null)
 const btnLoading = ref(false)
+const isActive = ref(true)
 
 const headers = [
   { title: 'ID', key: 'id', sortable: false },
   { title: 'Ism', key: 'name', sortable: false },
-  { title: 'Sana', key: 'date', sortable: false },
+  { title: 'Lavozim', key: 'role', sortable: false },
+  { title: 'Tug\'ilgan sana', key: 'birthDate', sortable: false },
+  { title: 'Holat', key: 'isActive', sortable: false },
   { title: 'Amallar', key: 'actions', sortable: false },
 ]
 
+const multiLangObj = () => yup.object({
+  uz: yup.string().required('Majburiy maydon'),
+  ru: yup.string().required('Majburiy maydon'),
+  en: yup.string().required('Majburiy maydon'),
+})
+
 const { values, defineComponentBinds, handleSubmit, resetForm, setValues, errors } = useForm({
+  initialValues: {
+    name: { uz: '', ru: '', en: '' },
+    role: { uz: '', ru: '', en: '' },
+    image: null,
+    birthDate: '',
+    message: { uz: '', ru: '', en: '' },
+  },
   validationSchema: toTypedSchema(yup.object({
-    name: yup.object({
-      uz: yup.string().required('Majburiy maydon'),
-      ru: yup.string().required('Majburiy maydon'),
-      en: yup.string().required('Majburiy maydon'),
-    }),
-    date: yup.string().required('Majburiy maydon'),
+    name: multiLangObj(),
+    role: multiLangObj(),
+    image: yup.number().required('Majburiy maydon'),
+    birthDate: yup.string().required('Majburiy maydon'),
+    message: multiLangObj(),
   })),
 })
 
@@ -52,7 +67,18 @@ const modalForm = {
     ru: defineComponentBinds('name.ru'),
     en: defineComponentBinds('name.en'),
   },
-  date: defineComponentBinds('date'),
+  role: {
+    uz: defineComponentBinds('role.uz'),
+    ru: defineComponentBinds('role.ru'),
+    en: defineComponentBinds('role.en'),
+  },
+  image: defineComponentBinds('image'),
+  birthDate: defineComponentBinds('birthDate'),
+  message: {
+    uz: defineComponentBinds('message.uz'),
+    ru: defineComponentBinds('message.ru'),
+    en: defineComponentBinds('message.en'),
+  },
 }
 
 async function fetchItems() {
@@ -79,10 +105,15 @@ async function fetchOneItem(id, mode = 'edit') {
   startFetching()
   try {
     const { data } = await birthdaysApi.findOne({ params: { id } })
+    const r = data.result
     setValues({
-      name: data.result.name,
-      date: data.result.date,
+      name: r.name || { uz: '', ru: '', en: '' },
+      role: r.role || { uz: '', ru: '', en: '' },
+      image: r.image ? (typeof r.image === 'object' ? r.image.id : r.image) : null,
+      birthDate: r.birthDate || '',
+      message: r.message || { uz: '', ru: '', en: '' },
     })
+    isActive.value = r.isActive !== undefined ? r.isActive : true
     showModal.value = true
   } catch (e) {
     console.error(e)
@@ -94,11 +125,15 @@ async function fetchOneItem(id, mode = 'edit') {
 const submitItem = handleSubmit(async (formValues) => {
   btnLoading.value = true
   try {
+    const payload = {
+      ...formValues,
+      isActive: isActive.value,
+    }
     if (itemID.value) {
-      await birthdaysApi.update({ params: { id: itemID.value, ...formValues } })
+      await birthdaysApi.update({ params: { id: itemID.value, ...payload } })
       snackbarText.value = "Tug'ilgan kun muvaffaqiyatli yangilandi"
     } else {
-      await birthdaysApi.create({ params: formValues })
+      await birthdaysApi.create({ params: payload })
       snackbarText.value = "Tug'ilgan kun muvaffaqiyatli yaratildi"
     }
     isSnackbarVisible.value = true
@@ -130,6 +165,7 @@ function openCreateModal() {
   resetForm()
   itemID.value = null
   isDisabledForm.value = false
+  isActive.value = true
   showModal.value = true
 }
 
@@ -175,6 +211,16 @@ onMounted(() => {
           {{ getValueMatchLocale(item.raw.name) }}
         </template>
 
+        <template #item.role="{ item }">
+          {{ getValueMatchLocale(item.raw.role) }}
+        </template>
+
+        <template #item.isActive="{ item }">
+          <VChip :color="item.raw.isActive ? 'success' : 'warning'" size="small">
+            {{ item.raw.isActive ? 'Faol' : 'Nofaol' }}
+          </VChip>
+        </template>
+
         <template #item.actions="{ item }">
           <IconBtn size="small" @click="fetchOneItem(item.raw.id, 'edit')">
             <VIcon icon="tabler-edit" />
@@ -203,18 +249,53 @@ onMounted(() => {
       </template>
       <template #body>
         <VRow>
-          <VCol cols="12">
+          <!-- Name -->
+          <VCol cols="12" md="4">
             <VTextField v-bind="modalForm.name.uz" label="Ism (UZ)" :error-messages="errors['name.uz']" :disabled="isDisabledForm" />
           </VCol>
-          <VCol cols="12">
+          <VCol cols="12" md="4">
             <VTextField v-bind="modalForm.name.ru" label="Ism (RU)" :error-messages="errors['name.ru']" :disabled="isDisabledForm" />
           </VCol>
-          <VCol cols="12">
+          <VCol cols="12" md="4">
             <VTextField v-bind="modalForm.name.en" label="Ism (EN)" :error-messages="errors['name.en']" :disabled="isDisabledForm" />
           </VCol>
+
+          <!-- Role -->
+          <VCol cols="12" md="4">
+            <VTextField v-bind="modalForm.role.uz" label="Lavozim (UZ)" :error-messages="errors['role.uz']" :disabled="isDisabledForm" />
+          </VCol>
+          <VCol cols="12" md="4">
+            <VTextField v-bind="modalForm.role.ru" label="Lavozim (RU)" :error-messages="errors['role.ru']" :disabled="isDisabledForm" />
+          </VCol>
+          <VCol cols="12" md="4">
+            <VTextField v-bind="modalForm.role.en" label="Lavozim (EN)" :error-messages="errors['role.en']" :disabled="isDisabledForm" />
+          </VCol>
+
+          <!-- Image (Upload) -->
           <VCol cols="12">
-            <AppDateTimePicker v-bind="modalForm.date" label="Sana" :disabled="isDisabledForm" />
-            <span class="text-error text-caption">{{ errors['date'] }}</span>
+            <FormUpload v-bind="modalForm.image" name="image" label="Rasm" upload-service-name="birthdays" :disabled="isDisabledForm" />
+            <span class="text-error text-caption">{{ errors['image'] }}</span>
+          </VCol>
+
+          <!-- Birth Date -->
+          <VCol cols="12" md="6">
+            <VTextField v-bind="modalForm.birthDate" label="Tug'ilgan sana" placeholder="1990-05-15" :error-messages="errors['birthDate']" :disabled="isDisabledForm" />
+          </VCol>
+
+          <!-- Is Active -->
+          <VCol cols="12" md="6">
+            <VSwitch v-model="isActive" label="Faolmi?" :disabled="isDisabledForm" />
+          </VCol>
+
+          <!-- Message -->
+          <VCol cols="12">
+            <VTextarea v-bind="modalForm.message.uz" label="Tabrik xabari (UZ)" :error-messages="errors['message.uz']" :disabled="isDisabledForm" />
+          </VCol>
+          <VCol cols="12">
+            <VTextarea v-bind="modalForm.message.ru" label="Tabrik xabari (RU)" :error-messages="errors['message.ru']" :disabled="isDisabledForm" />
+          </VCol>
+          <VCol cols="12">
+            <VTextarea v-bind="modalForm.message.en" label="Tabrik xabari (EN)" :error-messages="errors['message.en']" :disabled="isDisabledForm" />
           </VCol>
         </VRow>
       </template>
