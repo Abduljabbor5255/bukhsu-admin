@@ -1,17 +1,11 @@
- version: '3.7'
-
 services:
-  fit-dashboard:
+  bukhorcha-admin:
     build:
       context: .
-      dockerfile: docker/Dockerfile
-    environment:
-      VITE_APP_URL_V1: ${VITE_APP_URL_V1}
-      VITE_APP_URL_V2: ${VITE_APP_URL_V2}
-      VITE_APP_URL_V3: ${VITE_APP_URL_V3}
+      dockerfile: Dockerfile
+      args:
+        VITE_APP_URL_V1: ${VITE_APP_URL_V1}
     ports:
-      - "8011:8090"
-    container_name: fit-dashboard
-    working_dir: /app
-    volumes:
-      - .:/app
+      - "8011:80"
+    container_name: bukhorcha-admin
+    restart: unless-stopped

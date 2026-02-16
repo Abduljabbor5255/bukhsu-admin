@@ -1,31 +1,35 @@
-# stage1 as builder
-FROM node:16-alpine as builder
+# Stage 1: Build
+FROM node:18-alpine AS builder
 
-# copy the package.json to install dependencies
-COPY package.json package-json.lock ./
+WORKDIR /app
 
-# Install the dependencies and make the folder
-RUN npm install && mkdir /project && mv ./node_modules ./project
-
-WORKDIR /project
-
+# Copy all project files
 COPY . .
 
-# Build the project and copy the files
-RUN npm build-dev
+# Install dependencies (skip postinstall to control build order)
+RUN yarn install --frozen-lockfile --ignore-scripts
 
+# Build icons
+RUN yarn build:icons
 
+# Accept build-time environment variables
+ARG VITE_APP_URL_V1
+ENV VITE_APP_URL_V1=$VITE_APP_URL_V1
+
+# Build the project
+RUN yarn build
+
+# Stage 2: Serve with Nginx
 FROM nginx:alpine
 
-#!/bin/sh
-
+# Copy custom nginx config
 COPY nginx.conf /etc/nginx/conf.d/default.conf
 
-## Remove default nginx index page
+# Remove default nginx index page
 RUN rm -rf /usr/share/nginx/html/*
 
-# Copy from the stahg 1
-COPY --from=builder /project/dist /usr/share/nginx/html
+# Copy built files from builder stage
+COPY --from=builder /app/dist /usr/share/nginx/html
 
 EXPOSE 80
 
