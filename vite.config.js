@@ -7,17 +7,13 @@ import Components from 'unplugin-vue-components/vite'
 import { defineConfig } from 'vite'
 import vuetify from 'vite-plugin-vuetify'
 
-
 // @ts-expect-error Known error: https://github.com/sxzz/unplugin-vue-macros/issues/257#issuecomment-1410752890
 import DefineOptions from 'unplugin-vue-define-options/vite'
 
-// https://vitejs.dev/config/
 export default defineConfig({
   plugins: [
     vue(),
     vueJsx(),
-
-    // https://github.com/vuetifyjs/vuetify-loader/tree/next/packages/vite-plugin
     vuetify({
       styles: {
         configFile: 'src/styles/variables/_vuetify.scss',
@@ -62,17 +58,18 @@ export default defineConfig({
     outDir: 'dist',
     chunkSizeWarningLimit: 5000,
   },
-
   optimizeDeps: {
     exclude: ['vuetify'],
     entries: [
       './src/**/*.vue',
     ],
   },
+
+  // --- PROXY SOZLAMALARI ---
   server: {
     proxy: {
       '/api': {
-        target: 'https://bukhorcha-backend-zuiy.onrender.com',
+        target: 'http://62.113.58.93:3005',
         changeOrigin: true,
         secure: false,
       },

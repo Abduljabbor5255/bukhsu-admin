@@ -3,8 +3,8 @@ import { useLoading } from "@/composable/useLoading"
 import { newsApi } from "@/services/news/news.service"
 import { getValueMatchLocale } from "@/util/helper"
 import { toTypedSchema } from '@vee-validate/yup'
-import { useForm } from 'vee-validate'
-import { onMounted, ref } from "vue"
+import { useField, useForm } from 'vee-validate'
+import { computed, onMounted, reactive, ref } from "vue"
 import { VDataTableServer } from 'vuetify/labs/VDataTable'
 import * as yup from 'yup'
 
@@ -43,7 +43,7 @@ const multiLangObj = () => yup.object({
   en: yup.string().required('Majburiy maydon'),
 })
 
-const { values, defineComponentBinds, handleSubmit, resetForm, setValues, errors } = useForm({
+const { values, handleSubmit, resetForm, setValues, errors } = useForm({
   initialValues: {
     title: { uz: '', ru: '', en: '' },
     content: { uz: '', ru: '', en: '' },
@@ -56,31 +56,48 @@ const { values, defineComponentBinds, handleSubmit, resetForm, setValues, errors
     title: multiLangObj(),
     content: multiLangObj(),
     category: multiLangObj(),
-    mainImage: yup.number().required('Majburiy maydon'),
+    mainImage: yup.mixed().required('Majburiy maydon'),
     videoUrl: yup.string().nullable(),
     gallery: yup.array().nullable(),
   })),
 })
 
-const modalForm = {
-  title: {
-    uz: defineComponentBinds('title.uz'),
-    ru: defineComponentBinds('title.ru'),
-    en: defineComponentBinds('title.en'),
-  },
-  content: {
-    uz: defineComponentBinds('content.uz'),
-    ru: defineComponentBinds('content.ru'),
-    en: defineComponentBinds('content.en'),
-  },
-  category: {
-    uz: defineComponentBinds('category.uz'),
-    ru: defineComponentBinds('category.ru'),
-    en: defineComponentBinds('category.en'),
-  },
-  mainImage: defineComponentBinds('mainImage'),
-  videoUrl: defineComponentBinds('videoUrl'),
+const makeLangFields = (basePath) => {
+  const { value: uz, errorMessage: uzError, handleBlur: uzBlur } = useField(`${basePath}.uz`)
+  const { value: ru, errorMessage: ruError, handleBlur: ruBlur } = useField(`${basePath}.ru`)
+  const { value: en, errorMessage: enError, handleBlur: enBlur } = useField(`${basePath}.en`)
+
+  const uzProps = computed(() => ({
+    'error-messages': uzError.value,
+    onBlur: uzBlur,
+  }))
+  const ruProps = computed(() => ({
+    'error-messages': ruError.value,
+    onBlur: ruBlur,
+  }))
+  const enProps = computed(() => ({
+    'error-messages': enError.value,
+    onBlur: enBlur,
+  }))
+
+  return reactive({
+    uz, uzProps,
+    ru, ruProps,
+    en, enProps,
+  })
 }
+
+const title = makeLangFields('title')
+const content = makeLangFields('content')
+const category = makeLangFields('category')
+
+const { value: mainImage } = useField('mainImage')
+
+const { value: videoUrl, errorMessage: videoUrlError, handleBlur: videoUrlBlur } = useField('videoUrl')
+const videoUrlProps = computed(() => ({
+  'error-messages': videoUrlError.value,
+  onBlur: videoUrlBlur,
+}))
 
 async function fetchItems() {
   startFetching()
@@ -253,46 +270,46 @@ onMounted(() => {
         <VRow>
           <!-- Title -->
           <VCol cols="12">
-            <VTextField v-bind="modalForm.title.uz" label="Sarlavha (UZ)" :error-messages="errors['title.uz']" :disabled="isDisabledForm" />
+            <VTextField v-model="title.uz" v-bind="title.uzProps" label="Sarlavha (UZ)" :disabled="isDisabledForm" />
           </VCol>
           <VCol cols="12">
-            <VTextField v-bind="modalForm.title.ru" label="Sarlavha (RU)" :error-messages="errors['title.ru']" :disabled="isDisabledForm" />
+            <VTextField v-model="title.ru" v-bind="title.ruProps" label="Sarlavha (RU)" :disabled="isDisabledForm" />
           </VCol>
           <VCol cols="12">
-            <VTextField v-bind="modalForm.title.en" label="Sarlavha (EN)" :error-messages="errors['title.en']" :disabled="isDisabledForm" />
+            <VTextField v-model="title.en" v-bind="title.enProps" label="Sarlavha (EN)" :disabled="isDisabledForm" />
           </VCol>
 
           <!-- Content -->
           <VCol cols="12">
-            <VTextarea v-bind="modalForm.content.uz" label="Kontent (UZ)" :error-messages="errors['content.uz']" :disabled="isDisabledForm" />
+            <VTextarea v-model="content.uz" v-bind="content.uzProps" label="Kontent (UZ)" :disabled="isDisabledForm" />
           </VCol>
           <VCol cols="12">
-            <VTextarea v-bind="modalForm.content.ru" label="Kontent (RU)" :error-messages="errors['content.ru']" :disabled="isDisabledForm" />
+            <VTextarea v-model="content.ru" v-bind="content.ruProps" label="Kontent (RU)" :disabled="isDisabledForm" />
           </VCol>
           <VCol cols="12">
-            <VTextarea v-bind="modalForm.content.en" label="Kontent (EN)" :error-messages="errors['content.en']" :disabled="isDisabledForm" />
+            <VTextarea v-model="content.en" v-bind="content.enProps" label="Kontent (EN)" :disabled="isDisabledForm" />
           </VCol>
 
           <!-- Category -->
           <VCol cols="12" md="4">
-            <VTextField v-bind="modalForm.category.uz" label="Kategoriya (UZ)" :error-messages="errors['category.uz']" :disabled="isDisabledForm" />
+            <VTextField v-model="category.uz" v-bind="category.uzProps" label="Kategoriya (UZ)" :disabled="isDisabledForm" />
           </VCol>
           <VCol cols="12" md="4">
-            <VTextField v-bind="modalForm.category.ru" label="Kategoriya (RU)" :error-messages="errors['category.ru']" :disabled="isDisabledForm" />
+            <VTextField v-model="category.ru" v-bind="category.ruProps" label="Kategoriya (RU)" :disabled="isDisabledForm" />
           </VCol>
           <VCol cols="12" md="4">
-            <VTextField v-bind="modalForm.category.en" label="Kategoriya (EN)" :error-messages="errors['category.en']" :disabled="isDisabledForm" />
+            <VTextField v-model="category.en" v-bind="category.enProps" label="Kategoriya (EN)" :disabled="isDisabledForm" />
           </VCol>
 
           <!-- Main Image (Upload) -->
           <VCol cols="12">
-            <FormUpload v-bind="modalForm.mainImage" name="mainImage" label="Asosiy rasm" upload-service-name="news" :disabled="isDisabledForm" />
+            <FormUpload v-model="mainImage" name="mainImage" label="Asosiy rasm" upload-service-name="news" :disabled="isDisabledForm" />
             <span class="text-error text-caption">{{ errors['mainImage'] }}</span>
           </VCol>
 
           <!-- Video URL -->
           <VCol cols="12">
-            <VTextField v-bind="modalForm.videoUrl" label="Video URL" :error-messages="errors['videoUrl']" :disabled="isDisabledForm" />
+            <VTextField v-model="videoUrl" v-bind="videoUrlProps" label="Video URL" :disabled="isDisabledForm" />
           </VCol>
 
           <!-- Is Published -->

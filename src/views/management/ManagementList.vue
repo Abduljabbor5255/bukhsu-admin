@@ -3,8 +3,8 @@ import { useLoading } from "@/composable/useLoading"
 import { managementApi } from "@/services/management/management.service"
 import { getValueMatchLocale } from "@/util/helper"
 import { toTypedSchema } from '@vee-validate/yup'
-import { useForm } from 'vee-validate'
-import { onMounted, ref } from "vue"
+import { useField, useForm } from 'vee-validate'
+import { computed, onMounted, reactive, ref } from "vue"
 import { VDataTableServer } from 'vuetify/labs/VDataTable'
 import * as yup from 'yup'
 
@@ -31,9 +31,8 @@ const isActive = ref(true)
 
 const headers = [
   { title: 'ID', key: 'id', sortable: false },
-  { title: 'To\'liq ism', key: 'fullName', sortable: false },
-  { title: 'Lavozim', key: 'position', sortable: false },
-  { title: 'Telefon', key: 'phone', sortable: false },
+  { title: 'Ism', key: 'name', sortable: false },
+  { title: 'Lavozim', key: 'role', sortable: false },
   { title: 'Tartib', key: 'order', sortable: false },
   { title: 'Holat', key: 'isActive', sortable: false },
   { title: 'Amallar', key: 'actions', sortable: false },
@@ -45,48 +44,67 @@ const multiLangObj = () => yup.object({
   en: yup.string().required('Majburiy maydon'),
 })
 
-const { values, defineComponentBinds, handleSubmit, resetForm, setValues, errors } = useForm({
+const { values, handleSubmit, resetForm, setValues, errors } = useForm({
   initialValues: {
-    fullName: { uz: '', ru: '', en: '' },
-    position: { uz: '', ru: '', en: '' },
-    bio: { uz: '', ru: '', en: '' },
-    photo: null,
-    reception: '',
-    phone: '',
+    name: { uz: '', ru: '', en: '' },
+    role: { uz: '', ru: '', en: '' },
+    image: null,
     order: 1,
+    phone: '',
+    reception: { uz: '', ru: '', en: '' },
   },
   validationSchema: toTypedSchema(yup.object({
-    fullName: multiLangObj(),
-    position: multiLangObj(),
-    bio: multiLangObj(),
-    photo: yup.number().required('Majburiy maydon'),
-    reception: yup.string().required('Majburiy maydon'),
+    name: multiLangObj(),
+    role: multiLangObj(),
+    image: yup.mixed().required('Majburiy maydon'),
+    order: yup.number().required('Majburiy maydon'),
     phone: yup.string().required('Majburiy maydon'),
-    order: yup.number().required('Majburiy maydon').default(1),
+    reception: multiLangObj(),
   })),
 })
 
-const modalForm = {
-  fullName: {
-    uz: defineComponentBinds('fullName.uz'),
-    ru: defineComponentBinds('fullName.ru'),
-    en: defineComponentBinds('fullName.en'),
-  },
-  position: {
-    uz: defineComponentBinds('position.uz'),
-    ru: defineComponentBinds('position.ru'),
-    en: defineComponentBinds('position.en'),
-  },
-  bio: {
-    uz: defineComponentBinds('bio.uz'),
-    ru: defineComponentBinds('bio.ru'),
-    en: defineComponentBinds('bio.en'),
-  },
-  photo: defineComponentBinds('photo'),
-  reception: defineComponentBinds('reception'),
-  phone: defineComponentBinds('phone'),
-  order: defineComponentBinds('order'),
+const makeLangFields = (basePath) => {
+  const { value: uz, errorMessage: uzError, handleBlur: uzBlur } = useField(`${basePath}.uz`)
+  const { value: ru, errorMessage: ruError, handleBlur: ruBlur } = useField(`${basePath}.ru`)
+  const { value: en, errorMessage: enError, handleBlur: enBlur } = useField(`${basePath}.en`)
+
+  const uzProps = computed(() => ({
+    'error-messages': uzError.value,
+    onBlur: uzBlur,
+  }))
+  const ruProps = computed(() => ({
+    'error-messages': ruError.value,
+    onBlur: ruBlur,
+  }))
+  const enProps = computed(() => ({
+    'error-messages': enError.value,
+    onBlur: enBlur,
+  }))
+
+  return reactive({
+    uz, uzProps,
+    ru, ruProps,
+    en, enProps,
+  })
 }
+
+const name = makeLangFields('name')
+const role = makeLangFields('role')
+const reception = makeLangFields('reception')
+
+const { value: image } = useField('image')
+
+const { value: order, errorMessage: orderError, handleBlur: orderBlur } = useField('order')
+const orderProps = computed(() => ({
+  'error-messages': orderError.value,
+  onBlur: orderBlur,
+}))
+
+const { value: phone, errorMessage: phoneError, handleBlur: phoneBlur } = useField('phone')
+const phoneProps = computed(() => ({
+  'error-messages': phoneError.value,
+  onBlur: phoneBlur,
+}))
 
 async function fetchItems() {
   startFetching()
@@ -114,13 +132,12 @@ async function fetchOneItem(id, mode = 'edit') {
     const { data } = await managementApi.findOne({ params: { id } })
     const r = data.result
     setValues({
-      fullName: r.fullName || { uz: '', ru: '', en: '' },
-      position: r.position || { uz: '', ru: '', en: '' },
-      bio: r.bio || { uz: '', ru: '', en: '' },
-      photo: r.photo ? (typeof r.photo === 'object' ? r.photo.id : r.photo) : null,
-      reception: r.reception || '',
-      phone: r.phone || '',
+      name: r.name || { uz: '', ru: '', en: '' },
+      role: r.role || { uz: '', ru: '', en: '' },
+      image: r.image ? (typeof r.image === 'object' ? r.image.id : r.image) : null,
       order: r.order || 1,
+      phone: r.phone || '',
+      reception: r.reception || { uz: '', ru: '', en: '' },
     })
     isActive.value = r.isActive !== undefined ? r.isActive : true
     showModal.value = true
@@ -135,15 +152,27 @@ const submitItem = handleSubmit(async (formValues) => {
   btnLoading.value = true
   try {
     const payload = {
-      ...formValues,
+      fullName: formValues.name,
+      position: formValues.role,
+      reception: typeof formValues.reception === 'string' ? formValues.reception : JSON.stringify(formValues.reception),
+      order: formValues.order,
+      phone: formValues.phone,
       isActive: isActive.value,
+      // bio is in DTO but not in form? form has 'reception'.
+      // DTO has 'reception' as string.
+      // DTO has 'photo'.
     }
+
+    if (formValues.image) {
+       payload.photo = formValues.image
+    }
+
     if (itemID.value) {
       await managementApi.update({ params: { id: itemID.value, ...payload } })
-      snackbarText.value = "Ma'lumot muvaffaqiyatli yangilandi"
+      snackbarText.value = "Rahbariyat a'zosi muvaffaqiyatli yangilandi"
     } else {
       await managementApi.create({ params: payload })
-      snackbarText.value = "Ma'lumot muvaffaqiyatli yaratildi"
+      snackbarText.value = "Rahbariyat a'zosi muvaffaqiyatli yaratildi"
     }
     isSnackbarVisible.value = true
     closeModals()
@@ -159,7 +188,7 @@ async function deleteItem() {
   btnLoading.value = true
   try {
     await managementApi.remove({ params: { id: itemID.value } })
-    snackbarText.value = "Ma'lumot muvaffaqiyatli o'chirildi"
+    snackbarText.value = "Rahbariyat a'zosi muvaffaqiyatli o'chirildi"
     isSnackbarVisible.value = true
     closeDeleteModal()
     fetchItems()
@@ -216,12 +245,12 @@ onMounted(() => {
         :loading="loading"
         class="text-no-wrap"
       >
-        <template #item.fullName="{ item }">
-          {{ getValueMatchLocale(item.raw.fullName) }}
+        <template #item.name="{ item }">
+          {{ getValueMatchLocale(item.raw.name) }}
         </template>
 
-        <template #item.position="{ item }">
-          {{ getValueMatchLocale(item.raw.position) }}
+        <template #item.role="{ item }">
+          {{ getValueMatchLocale(item.raw.role) }}
         </template>
 
         <template #item.isActive="{ item }">
@@ -254,66 +283,61 @@ onMounted(() => {
 
     <AppModal v-model="showModal" @close-modal="closeModals">
       <template #header>
-        <h3>{{ itemID ? (isDisabledForm ? 'Ko\'rish' : 'Tahrirlash') : 'Yangi yozuv' }}</h3>
+        <h3>{{ itemID ? (isDisabledForm ? 'Ko\'rish' : 'Tahrirlash') : 'Rahbar yaratish' }}</h3>
       </template>
       <template #body>
         <VRow>
-          <!-- Full Name -->
+          <!-- Name -->
           <VCol cols="12" md="4">
-            <VTextField v-bind="modalForm.fullName.uz" label="To'liq ism (UZ)" :error-messages="errors['fullName.uz']" :disabled="isDisabledForm" />
+            <VTextField v-model="name.uz" v-bind="name.uzProps" label="Ism (UZ)" :disabled="isDisabledForm" />
           </VCol>
           <VCol cols="12" md="4">
-            <VTextField v-bind="modalForm.fullName.ru" label="To'liq ism (RU)" :error-messages="errors['fullName.ru']" :disabled="isDisabledForm" />
+            <VTextField v-model="name.ru" v-bind="name.ruProps" label="Ism (RU)" :disabled="isDisabledForm" />
           </VCol>
           <VCol cols="12" md="4">
-            <VTextField v-bind="modalForm.fullName.en" label="To'liq ism (EN)" :error-messages="errors['fullName.en']" :disabled="isDisabledForm" />
-          </VCol>
-
-          <!-- Position -->
-          <VCol cols="12" md="4">
-            <VTextField v-bind="modalForm.position.uz" label="Lavozim (UZ)" :error-messages="errors['position.uz']" :disabled="isDisabledForm" />
-          </VCol>
-          <VCol cols="12" md="4">
-            <VTextField v-bind="modalForm.position.ru" label="Lavozim (RU)" :error-messages="errors['position.ru']" :disabled="isDisabledForm" />
-          </VCol>
-          <VCol cols="12" md="4">
-            <VTextField v-bind="modalForm.position.en" label="Lavozim (EN)" :error-messages="errors['position.en']" :disabled="isDisabledForm" />
+            <VTextField v-model="name.en" v-bind="name.enProps" label="Ism (EN)" :disabled="isDisabledForm" />
           </VCol>
 
-          <!-- Bio -->
+          <!-- Role -->
+          <VCol cols="12" md="4">
+            <VTextField v-model="role.uz" v-bind="role.uzProps" label="Lavozim (UZ)" :disabled="isDisabledForm" />
+          </VCol>
+          <VCol cols="12" md="4">
+            <VTextField v-model="role.ru" v-bind="role.ruProps" label="Lavozim (RU)" :disabled="isDisabledForm" />
+          </VCol>
+          <VCol cols="12" md="4">
+            <VTextField v-model="role.en" v-bind="role.enProps" label="Lavozim (EN)" :disabled="isDisabledForm" />
+          </VCol>
+
+          <!-- Image (Upload) -->
           <VCol cols="12">
-            <VTextarea v-bind="modalForm.bio.uz" label="Biografiya (UZ)" :error-messages="errors['bio.uz']" :disabled="isDisabledForm" />
-          </VCol>
-          <VCol cols="12">
-            <VTextarea v-bind="modalForm.bio.ru" label="Biografiya (RU)" :error-messages="errors['bio.ru']" :disabled="isDisabledForm" />
-          </VCol>
-          <VCol cols="12">
-            <VTextarea v-bind="modalForm.bio.en" label="Biografiya (EN)" :error-messages="errors['bio.en']" :disabled="isDisabledForm" />
-          </VCol>
-
-          <!-- Photo (Upload) -->
-          <VCol cols="12">
-            <FormUpload v-bind="modalForm.photo" name="photo" label="Rasm" upload-service-name="management" :disabled="isDisabledForm" />
-            <span class="text-error text-caption">{{ errors['photo'] }}</span>
-          </VCol>
-
-          <!-- Reception -->
-          <VCol cols="12" md="6">
-            <VTextField v-bind="modalForm.reception" label="Qabul vaqti" placeholder="Dushanba-Juma 09:00-17:00" :error-messages="errors['reception']" :disabled="isDisabledForm" />
-          </VCol>
-
-          <!-- Phone -->
-          <VCol cols="12" md="6">
-            <VTextField v-bind="modalForm.phone" label="Telefon" placeholder="+998 65 221 00 00" :error-messages="errors['phone']" :disabled="isDisabledForm" />
+            <FormUpload v-model="image" name="image" label="Rasm" upload-service-name="management" :disabled="isDisabledForm" />
+            <span class="text-error text-caption">{{ errors['image'] }}</span>
           </VCol>
 
           <!-- Order -->
           <VCol cols="12" md="6">
-            <VTextField v-bind="modalForm.order" label="Tartib raqami" type="number" :error-messages="errors['order']" :disabled="isDisabledForm" />
+            <VTextField v-model="order" v-bind="orderProps" label="Tartib raqami" type="number" :disabled="isDisabledForm" />
+          </VCol>
+
+          <!-- Phone -->
+          <VCol cols="12" md="6">
+            <VTextField v-model="phone" v-bind="phoneProps" label="Telefon raqami" placeholder="+998 65 221 00 00" :disabled="isDisabledForm" />
+          </VCol>
+
+          <!-- Reception -->
+          <VCol cols="12">
+            <VTextarea v-model="reception.uz" v-bind="reception.uzProps" label="Qabul kunlari (UZ)" :disabled="isDisabledForm" />
+          </VCol>
+          <VCol cols="12">
+            <VTextarea v-model="reception.ru" v-bind="reception.ruProps" label="Qabul kunlari (RU)" :disabled="isDisabledForm" />
+          </VCol>
+          <VCol cols="12">
+            <VTextarea v-model="reception.en" v-bind="reception.enProps" label="Qabul kunlari (EN)" :disabled="isDisabledForm" />
           </VCol>
 
           <!-- Is Active -->
-          <VCol cols="12" md="6">
+          <VCol cols="12">
             <VSwitch v-model="isActive" label="Faolmi?" :disabled="isDisabledForm" />
           </VCol>
         </VRow>

@@ -50,7 +50,7 @@ export default [
       name: 'partners',
     },
     icon: {
-      icon: 'tabler-handshake',
+      icon: 'tabler-briefcase',
     },
   },
 ]

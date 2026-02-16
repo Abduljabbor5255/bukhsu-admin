@@ -15,7 +15,7 @@ import { hasOwnProperty } from "@/util/object.util"
 
 const props = defineProps({
   modelValue: {
-    type: [Array, Object],
+    type: [Array, Object, String],
     default: () => ([]),
   },
   name: {
@@ -66,6 +66,11 @@ watch(() => props.modelValue, async pModelValue => {
       pondInstance.value.removeFiles()
     }
   } else {
+    // If modelValue is a string (URL from our own emit), skip re-processing
+    if (typeof pModelValue === 'string') {
+      return
+    }
+
     let editItems = []
 
     if (isArray(pModelValue) && pModelValue.length && pondInstance.value) {
@@ -106,7 +111,12 @@ watch(() => props.modelValue, async pModelValue => {
 
 watch(fieldValues, fValues => {
   if (fValues.length) {
-    emits('update:modelValue', props.multiple ? fValues : fValues[0])
+    // Emit just the id (URL string) for form validation compatibility
+    if (props.multiple) {
+      emits('update:modelValue', fValues.map(f => f.id))
+    } else {
+      emits('update:modelValue', fValues[0].id)
+    }
   } else {
     emits('update:modelValue', null)
   }
@@ -208,13 +218,23 @@ async function processTrigger(fieldName, file, metadata, load, error, progress, 
         uploadServiceName: props.uploadServiceName,
       })
 
-      load(
-        uploadRsp.data.result.id,
-      )
+      // API returns { url: "/uploads/..." } format
+      const responseData = uploadRsp.data
+      const url = responseData.url || (responseData.result && responseData.result.path)
+      const fileName = url ? url.split('/').pop() : file.name
+      const ext = fileName ? fileName.split('.').pop() : 'png'
 
-      addFileListener({
-        result: uploadRsp.data.result,
-      })
+      const result = {
+        id: url,
+        path: url,
+        extension: ext,
+        name: fileName || file.name,
+        size: file.size,
+      }
+
+      load(result.id)
+
+      addFileListener({ result })
     } catch (eMessage) {
       error(eMessage)
     }

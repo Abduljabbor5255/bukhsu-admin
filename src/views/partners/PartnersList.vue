@@ -3,8 +3,8 @@ import { useLoading } from "@/composable/useLoading"
 import { partnersApi } from "@/services/partners/partners.service"
 import { getValueMatchLocale } from "@/util/helper"
 import { toTypedSchema } from '@vee-validate/yup'
-import { useForm } from 'vee-validate'
-import { onMounted, ref } from "vue"
+import { useField, useForm } from 'vee-validate'
+import { computed, onMounted, reactive, ref } from "vue"
 import { VDataTableServer } from 'vuetify/labs/VDataTable'
 import * as yup from 'yup'
 
@@ -44,7 +44,7 @@ const multiLangObj = () => yup.object({
   en: yup.string().required('Majburiy maydon'),
 })
 
-const { values, defineComponentBinds, handleSubmit, resetForm, setValues, errors } = useForm({
+const { values, handleSubmit, resetForm, setValues, errors } = useForm({
   initialValues: {
     image: null,
     alt: { uz: '', ru: '', en: '' },
@@ -52,23 +52,52 @@ const { values, defineComponentBinds, handleSubmit, resetForm, setValues, errors
     order: 1,
   },
   validationSchema: toTypedSchema(yup.object({
-    image: yup.number().required('Majburiy maydon'),
+    image: yup.mixed().required('Majburiy maydon'),
     alt: multiLangObj(),
     link: yup.string().required('Majburiy maydon'),
     order: yup.number().required('Majburiy maydon').default(1),
   })),
 })
 
-const modalForm = {
-  image: defineComponentBinds('image'),
-  alt: {
-    uz: defineComponentBinds('alt.uz'),
-    ru: defineComponentBinds('alt.ru'),
-    en: defineComponentBinds('alt.en'),
-  },
-  link: defineComponentBinds('link'),
-  order: defineComponentBinds('order'),
+const makeLangFields = (basePath) => {
+  const { value: uz, errorMessage: uzError, handleBlur: uzBlur } = useField(`${basePath}.uz`)
+  const { value: ru, errorMessage: ruError, handleBlur: ruBlur } = useField(`${basePath}.ru`)
+  const { value: en, errorMessage: enError, handleBlur: enBlur } = useField(`${basePath}.en`)
+
+  const uzProps = computed(() => ({
+    'error-messages': uzError.value,
+    onBlur: uzBlur,
+  }))
+  const ruProps = computed(() => ({
+    'error-messages': ruError.value,
+    onBlur: ruBlur,
+  }))
+  const enProps = computed(() => ({
+    'error-messages': enError.value,
+    onBlur: enBlur,
+  }))
+
+  return reactive({
+    uz, uzProps,
+    ru, ruProps,
+    en, enProps,
+  })
 }
+
+const { value: image } = useField('image')
+const alt = makeLangFields('alt')
+
+const { value: link, errorMessage: linkError, handleBlur: linkBlur } = useField('link')
+const linkProps = computed(() => ({
+  'error-messages': linkError.value,
+  onBlur: linkBlur,
+}))
+
+const { value: order, errorMessage: orderError, handleBlur: orderBlur } = useField('order')
+const orderProps = computed(() => ({
+  'error-messages': orderError.value,
+  onBlur: orderBlur,
+}))
 
 async function fetchItems() {
   startFetching()
@@ -235,29 +264,29 @@ onMounted(() => {
         <VRow>
           <!-- Image (Upload) -->
           <VCol cols="12">
-            <FormUpload v-bind="modalForm.image" name="image" label="Logo rasm" upload-service-name="partners" :disabled="isDisabledForm" />
+            <FormUpload v-model="image" name="image" label="Logo rasm" upload-service-name="partners" :disabled="isDisabledForm" />
             <span class="text-error text-caption">{{ errors['image'] }}</span>
           </VCol>
 
           <!-- Alt -->
           <VCol cols="12" md="4">
-            <VTextField v-bind="modalForm.alt.uz" label="Nomi (UZ)" :error-messages="errors['alt.uz']" :disabled="isDisabledForm" />
+            <VTextField v-model="alt.uz" v-bind="alt.uzProps" label="Nomi (UZ)" :disabled="isDisabledForm" />
           </VCol>
           <VCol cols="12" md="4">
-            <VTextField v-bind="modalForm.alt.ru" label="Nomi (RU)" :error-messages="errors['alt.ru']" :disabled="isDisabledForm" />
+            <VTextField v-model="alt.ru" v-bind="alt.ruProps" label="Nomi (RU)" :disabled="isDisabledForm" />
           </VCol>
           <VCol cols="12" md="4">
-            <VTextField v-bind="modalForm.alt.en" label="Nomi (EN)" :error-messages="errors['alt.en']" :disabled="isDisabledForm" />
+            <VTextField v-model="alt.en" v-bind="alt.enProps" label="Nomi (EN)" :disabled="isDisabledForm" />
           </VCol>
 
           <!-- Link -->
           <VCol cols="12">
-            <VTextField v-bind="modalForm.link" label="Havola (URL)" placeholder="https://example.com" :error-messages="errors['link']" :disabled="isDisabledForm" />
+            <VTextField v-model="link" v-bind="linkProps" label="Havola (URL)" placeholder="https://example.com" :disabled="isDisabledForm" />
           </VCol>
 
           <!-- Order -->
           <VCol cols="12" md="6">
-            <VTextField v-bind="modalForm.order" label="Tartib raqami" type="number" :error-messages="errors['order']" :disabled="isDisabledForm" />
+            <VTextField v-model="order" v-bind="orderProps" label="Tartib raqami" type="number" :disabled="isDisabledForm" />
           </VCol>
 
           <!-- Is Active -->

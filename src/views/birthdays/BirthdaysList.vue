@@ -3,8 +3,8 @@ import { useLoading } from "@/composable/useLoading"
 import { birthdaysApi } from "@/services/birthdays/birthdays.service"
 import { getValueMatchLocale } from "@/util/helper"
 import { toTypedSchema } from '@vee-validate/yup'
-import { useForm } from 'vee-validate'
-import { onMounted, ref } from "vue"
+import { useField, useForm } from 'vee-validate'
+import { computed, onMounted, reactive, ref } from "vue"
 import { VDataTableServer } from 'vuetify/labs/VDataTable'
 import * as yup from 'yup'
 
@@ -44,7 +44,7 @@ const multiLangObj = () => yup.object({
   en: yup.string().required('Majburiy maydon'),
 })
 
-const { values, defineComponentBinds, handleSubmit, resetForm, setValues, errors } = useForm({
+const { values, handleSubmit, resetForm, setValues, errors } = useForm({
   initialValues: {
     name: { uz: '', ru: '', en: '' },
     role: { uz: '', ru: '', en: '' },
@@ -55,31 +55,48 @@ const { values, defineComponentBinds, handleSubmit, resetForm, setValues, errors
   validationSchema: toTypedSchema(yup.object({
     name: multiLangObj(),
     role: multiLangObj(),
-    image: yup.number().required('Majburiy maydon'),
+    image: yup.mixed().required('Majburiy maydon'),
     birthDate: yup.string().required('Majburiy maydon'),
     message: multiLangObj(),
   })),
 })
 
-const modalForm = {
-  name: {
-    uz: defineComponentBinds('name.uz'),
-    ru: defineComponentBinds('name.ru'),
-    en: defineComponentBinds('name.en'),
-  },
-  role: {
-    uz: defineComponentBinds('role.uz'),
-    ru: defineComponentBinds('role.ru'),
-    en: defineComponentBinds('role.en'),
-  },
-  image: defineComponentBinds('image'),
-  birthDate: defineComponentBinds('birthDate'),
-  message: {
-    uz: defineComponentBinds('message.uz'),
-    ru: defineComponentBinds('message.ru'),
-    en: defineComponentBinds('message.en'),
-  },
+const makeLangFields = (basePath) => {
+  const { value: uz, errorMessage: uzError, handleBlur: uzBlur } = useField(`${basePath}.uz`)
+  const { value: ru, errorMessage: ruError, handleBlur: ruBlur } = useField(`${basePath}.ru`)
+  const { value: en, errorMessage: enError, handleBlur: enBlur } = useField(`${basePath}.en`)
+
+  const uzProps = computed(() => ({
+    'error-messages': uzError.value,
+    onBlur: uzBlur,
+  }))
+  const ruProps = computed(() => ({
+    'error-messages': ruError.value,
+    onBlur: ruBlur,
+  }))
+  const enProps = computed(() => ({
+    'error-messages': enError.value,
+    onBlur: enBlur,
+  }))
+
+  return reactive({
+    uz, uzProps,
+    ru, ruProps,
+    en, enProps,
+  })
 }
+
+const name = makeLangFields('name')
+const role = makeLangFields('role')
+const message = makeLangFields('message')
+
+const { value: image } = useField('image')
+
+const { value: birthDate, errorMessage: birthDateError, handleBlur: birthDateBlur } = useField('birthDate')
+const birthDateProps = computed(() => ({
+  'error-messages': birthDateError.value,
+  onBlur: birthDateBlur,
+}))
 
 async function fetchItems() {
   startFetching()
@@ -251,35 +268,35 @@ onMounted(() => {
         <VRow>
           <!-- Name -->
           <VCol cols="12" md="4">
-            <VTextField v-bind="modalForm.name.uz" label="Ism (UZ)" :error-messages="errors['name.uz']" :disabled="isDisabledForm" />
+            <VTextField v-model="name.uz" v-bind="name.uzProps" label="Ism (UZ)" :disabled="isDisabledForm" />
           </VCol>
           <VCol cols="12" md="4">
-            <VTextField v-bind="modalForm.name.ru" label="Ism (RU)" :error-messages="errors['name.ru']" :disabled="isDisabledForm" />
+            <VTextField v-model="name.ru" v-bind="name.ruProps" label="Ism (RU)" :disabled="isDisabledForm" />
           </VCol>
           <VCol cols="12" md="4">
-            <VTextField v-bind="modalForm.name.en" label="Ism (EN)" :error-messages="errors['name.en']" :disabled="isDisabledForm" />
+            <VTextField v-model="name.en" v-bind="name.enProps" label="Ism (EN)" :disabled="isDisabledForm" />
           </VCol>
 
           <!-- Role -->
           <VCol cols="12" md="4">
-            <VTextField v-bind="modalForm.role.uz" label="Lavozim (UZ)" :error-messages="errors['role.uz']" :disabled="isDisabledForm" />
+            <VTextField v-model="role.uz" v-bind="role.uzProps" label="Lavozim (UZ)" :disabled="isDisabledForm" />
           </VCol>
           <VCol cols="12" md="4">
-            <VTextField v-bind="modalForm.role.ru" label="Lavozim (RU)" :error-messages="errors['role.ru']" :disabled="isDisabledForm" />
+            <VTextField v-model="role.ru" v-bind="role.ruProps" label="Lavozim (RU)" :disabled="isDisabledForm" />
           </VCol>
           <VCol cols="12" md="4">
-            <VTextField v-bind="modalForm.role.en" label="Lavozim (EN)" :error-messages="errors['role.en']" :disabled="isDisabledForm" />
+            <VTextField v-model="role.en" v-bind="role.enProps" label="Lavozim (EN)" :disabled="isDisabledForm" />
           </VCol>
 
           <!-- Image (Upload) -->
           <VCol cols="12">
-            <FormUpload v-bind="modalForm.image" name="image" label="Rasm" upload-service-name="birthdays" :disabled="isDisabledForm" />
+            <FormUpload v-model="image" name="image" label="Rasm" upload-service-name="birthdays" :disabled="isDisabledForm" />
             <span class="text-error text-caption">{{ errors['image'] }}</span>
           </VCol>
 
           <!-- Birth Date -->
           <VCol cols="12" md="6">
-            <VTextField v-bind="modalForm.birthDate" label="Tug'ilgan sana" placeholder="1990-05-15" :error-messages="errors['birthDate']" :disabled="isDisabledForm" />
+            <VTextField v-model="birthDate" v-bind="birthDateProps" label="Tug'ilgan sana" placeholder="1990-05-15" :disabled="isDisabledForm" />
           </VCol>
 
           <!-- Is Active -->
@@ -289,13 +306,13 @@ onMounted(() => {
 
           <!-- Message -->
           <VCol cols="12">
-            <VTextarea v-bind="modalForm.message.uz" label="Tabrik xabari (UZ)" :error-messages="errors['message.uz']" :disabled="isDisabledForm" />
+            <VTextarea v-model="message.uz" v-bind="message.uzProps" label="Tabrik xabari (UZ)" :disabled="isDisabledForm" />
           </VCol>
           <VCol cols="12">
-            <VTextarea v-bind="modalForm.message.ru" label="Tabrik xabari (RU)" :error-messages="errors['message.ru']" :disabled="isDisabledForm" />
+            <VTextarea v-model="message.ru" v-bind="message.ruProps" label="Tabrik xabari (RU)" :disabled="isDisabledForm" />
           </VCol>
           <VCol cols="12">
-            <VTextarea v-bind="modalForm.message.en" label="Tabrik xabari (EN)" :error-messages="errors['message.en']" :disabled="isDisabledForm" />
+            <VTextarea v-model="message.en" v-bind="message.enProps" label="Tabrik xabari (EN)" :disabled="isDisabledForm" />
           </VCol>
         </VRow>
       </template>
