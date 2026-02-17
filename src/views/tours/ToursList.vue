@@ -31,6 +31,7 @@ const isPublished = ref(true)
 
 const headers = [
   { title: 'ID', key: 'id', sortable: false },
+  { title: 'Rasm', key: 'mainImage', sortable: false },
   { title: 'Nomi', key: 'title', sortable: false },
   { title: 'Manzil', key: 'location', sortable: false },
   { title: 'Narx', key: 'price', sortable: false },
@@ -128,7 +129,7 @@ async function fetchOneItem(id, mode = 'edit') {
       price: r.price || { uz: '', ru: '', en: '' },
       days: r.days || { uz: '', ru: '', en: '' },
       description: r.description || { uz: '', ru: '', en: '' },
-      mainImage: r.mainImage ? (typeof r.mainImage === 'object' ? r.mainImage.id : r.mainImage) : null,
+      mainImage: r.mainImage || null,
       gallery: r.gallery || [],
     })
     isPublished.value = r.isPublished !== undefined ? r.isPublished : true
@@ -259,6 +260,19 @@ onMounted(() => {
         :loading="loading"
         class="text-no-wrap"
       >
+        <template #item.mainImage="{ item }">
+          <div class="py-2">
+            <VImg
+              v-if="item.raw.mainImage"
+              :src="item.raw.mainImage"
+              width="50"
+              height="50"
+              cover
+              class="rounded"
+            />
+          </div>
+        </template>
+
         <template #item.title="{ item }">
           {{ getValueMatchLocale(item.raw.title) }}
         </template>

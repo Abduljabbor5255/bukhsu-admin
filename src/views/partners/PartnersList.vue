@@ -125,7 +125,7 @@ async function fetchOneItem(id, mode = 'edit') {
     const { data } = await partnersApi.findOne({ params: { id } })
     const r = data.result
     setValues({
-      image: r.image ? (typeof r.image === 'object' ? r.image.id : r.image) : null,
+      image: r.image || null,
       alt: r.alt || { uz: '', ru: '', en: '' },
       link: r.link || '',
       order: r.order || 1,

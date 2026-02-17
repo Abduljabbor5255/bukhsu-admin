@@ -1,6 +1,6 @@
 <script setup>
 import { uploadApi } from "@/services/upload/upload.service"
-import { onMounted, ref, watch } from "vue"
+import { computed, onMounted, ref, watch } from "vue"
 
 import FilePondImagePreview from "@/plugins/fileUploader/filepond-image-preview/js"
 import FilePondPluginFileValidateType from '@/plugins/fileUploader/filepond-validate-type/js'
@@ -9,9 +9,6 @@ import * as FilePond from '@/plugins/fileUploader/filepond/js'
 /*! CSS FILES */
 import "@/plugins/fileUploader/filepond-image-preview/css/styles.css"
 import "@/plugins/fileUploader/filepond/css/styles.css"
-import { isArray } from "@/util/inspect"
-import { isNull, isObject, isUndefined } from "@/util/inspect.util"
-import { hasOwnProperty } from "@/util/object.util"
 
 const props = defineProps({
   modelValue: {
@@ -42,121 +39,76 @@ const props = defineProps({
 
 const emits = defineEmits(['update:modelValue'])
 
-const inputId = ref(
-  generateUUID(),
-)
+const inputId = ref(generateUUID())
 
 FilePond.registerPlugin(
   FilePondPluginFileValidateType,
   FilePondImagePreview,
 )
 
-let fieldValues = ref([])
 let pondInstance = ref(null)
 
-// eslint-disable-next-line sonarjs/cognitive-complexity
-watch(() => props.modelValue, async pModelValue => {
-  const isPropEmpty = isArray(pModelValue) && !pModelValue.length ||
-    isNull(pModelValue) ||
-    isUndefined(pModelValue)
+// All images (existing URLs from API + newly uploaded URLs)
+const imageList = ref([])
 
-  if (isPropEmpty) {
-    fieldValues.value = []
-    if (pondInstance.value) {
-      pondInstance.value.removeFiles()
-    }
-  } else {
-    // If modelValue is a string (URL from our own emit), skip re-processing
-    if (typeof pModelValue === 'string') {
-      return
-    }
+// Track if we're currently emitting to prevent re-processing
+let isEmitting = false
 
-    let editItems = []
-
-    if (isArray(pModelValue) && pModelValue.length && pondInstance.value) {
-      editItems = pModelValue.filter(v => isObject(v))
-    } else if (
-      isObject(pModelValue)
-      && hasOwnProperty(pModelValue, "path")
-      && hasOwnProperty(pModelValue, "id")
-    ) {
-      editItems = [pModelValue]
-    }
-
-    if (editItems.length) {
-      const { localFiles, excludeItems } = await getPropItems(editItems)
-
-      if (excludeItems.length) {
-        setValue(
-          [...fieldValues.value, ...excludeItems],
-        )
-      }
-
-      pondInstance.value.addFiles(
-        localFiles.map(localFile => ({
-          source: localFile.file,
-          options: {
-            type: 'local',
-            metadata: {
-              serverId: localFile.serverId,
-            },
-          },
-        })),
-      )
-    }
-  }
-}, {
-  immediate: true,
+// Whether to show the FilePond input
+const showUploader = computed(() => {
+  if (props.disabled) return false
+  if (props.multiple) return true
+  return imageList.value.length === 0
 })
 
-watch(fieldValues, fValues => {
-  if (fValues.length) {
-    // Emit just the id (URL string) for form validation compatibility
-    if (props.multiple) {
-      emits('update:modelValue', fValues.map(f => f.id))
-    } else {
-      emits('update:modelValue', fValues[0].id)
+// Watch modelValue for external changes (e.g. from fetchOneItem)
+watch(() => props.modelValue, (newVal) => {
+  if (isEmitting) return
+
+  if (!newVal || (Array.isArray(newVal) && !newVal.length)) {
+    imageList.value = []
+    return
+  }
+
+  // Single string URL from API
+  if (typeof newVal === 'string') {
+    const alreadyHave = imageList.value.some(img => img.url === newVal)
+    if (!alreadyHave) {
+      imageList.value = [{ url: newVal, id: generateUUID() }]
     }
-  } else {
+    return
+  }
+
+  // Array of string URLs
+  if (Array.isArray(newVal) && newVal.length && typeof newVal[0] === 'string') {
+    imageList.value = newVal.map(url => ({ url, id: generateUUID() }))
+    return
+  }
+}, { immediate: true })
+
+// Emit value when imageList changes
+function emitValue() {
+  isEmitting = true
+  if (imageList.value.length === 0) {
     emits('update:modelValue', null)
+  } else if (props.multiple) {
+    emits('update:modelValue', imageList.value.map(img => img.url))
+  } else {
+    emits('update:modelValue', imageList.value[0].url)
   }
-})
+  // Reset flag on next tick
+  setTimeout(() => { isEmitting = false }, 0)
+}
+
+function removeImage(index) {
+  imageList.value.splice(index, 1)
+  emitValue()
+}
 
 onMounted(() => {
   initFilepond()
   removeFilepondLink()
 })
-
-function setValue(values) {
-  fieldValues.value = values
-}
-
-function removeValue(rmId) {
-  fieldValues.value = fieldValues.value.filter(({ id }) => {
-    return id.toString() !== rmId.toString()
-  })
-}
-
-async function getPropItems(items) {
-  const excludeItems = []
-  let localFiles = []
-
-  items.forEach(prevItem => {
-    const prevItemIndexInField = fieldValues.value.findIndex(({ id }) => id === prevItem.id)
-    if (prevItemIndexInField === -1) {
-      excludeItems.push(prevItem)
-    }
-  })
-
-  if (excludeItems.length) {
-    const blobFiles = excludeItems.map(eItem => restoreFile(eItem))
-      .filter(remoteFile => !isNull(remoteFile) && isObject(remoteFile))
-
-    localFiles = await Promise.all(blobFiles)
-  }
-
-  return { localFiles, excludeItems }
-}
 
 async function initFilepond() {
   if (pondInstance.value) {
@@ -175,69 +127,51 @@ async function initFilepond() {
     labelIdle: props.label,
     server: {
       process: processTrigger,
-      revert: (uniqueFileId, load) => {
-        removeValue(uniqueFileId)
-        load()
-      },
-      remove: (source, load) => {
-        fieldValues.value = fieldValues.value.filter(({ name, size }) => {
-          return name !== source.name && size?.toString() !== source.size.toString()
-        })
-        load()
-      },
     },
   })
 }
 
-async function processTrigger(fieldName, file, metadata, load, error, progress, abort, transfer, options) {
+async function processTrigger(fieldName, file, metadata, load, error, progress, abort) {
   const controller = new AbortController()
 
-  if (metadata.hasOwnProperty('type') && metadata.type === 'local') {
-    load(
-      metadata.serverId,
-    )
-  } else {
-    try {
-      const formData = new FormData()
+  try {
+    const formData = new FormData()
+    formData.append('file', file)
 
-      formData.append('file', file)
-
-      const config = {
-        headers: {
-          'Content-Type': 'multipart/form-data',
-        },
-        onUploadProgress: function (pEvent) {
-          progress(pEvent.lengthComputable, pEvent.loaded, pEvent.total)
-        },
-        signal: controller.signal,
-      }
-
-      const uploadRsp = await uploadApi.uploads({
-        config,
-        body: formData,
-        uploadServiceName: props.uploadServiceName,
-      })
-
-      // API returns { url: "/uploads/..." } format
-      const responseData = uploadRsp.data
-      const url = responseData.url || (responseData.result && responseData.result.path)
-      const fileName = url ? url.split('/').pop() : file.name
-      const ext = fileName ? fileName.split('.').pop() : 'png'
-
-      const result = {
-        id: url,
-        path: url,
-        extension: ext,
-        name: fileName || file.name,
-        size: file.size,
-      }
-
-      load(result.id)
-
-      addFileListener({ result })
-    } catch (eMessage) {
-      error(eMessage)
+    const config = {
+      headers: {
+        'Content-Type': 'multipart/form-data',
+      },
+      onUploadProgress: function (pEvent) {
+        progress(pEvent.lengthComputable, pEvent.loaded, pEvent.total)
+      },
+      signal: controller.signal,
     }
+
+    const uploadRsp = await uploadApi.uploads({
+      config,
+      body: formData,
+      uploadServiceName: props.uploadServiceName,
+    })
+
+    // API returns { url: "/uploads/..." } format
+    const responseData = uploadRsp.data
+    const url = responseData.url || (responseData.result && responseData.result.path)
+
+    // Add to our image list
+    imageList.value.push({ url, id: generateUUID() })
+    emitValue()
+
+    load(url)
+
+    // Remove from FilePond after short delay so it doesn't show duplicate preview
+    setTimeout(() => {
+      if (pondInstance.value) {
+        pondInstance.value.removeFiles()
+      }
+    }, 300)
+  } catch (eMessage) {
+    error(eMessage)
   }
 
   return {
@@ -248,69 +182,23 @@ async function processTrigger(fieldName, file, metadata, load, error, progress, 
   }
 }
 
-function addFileListener({ result }) {
-  let vFiles = []
-
-  if (fieldValues.value.length) {
-    fieldValues.value.forEach(fValue => {
-      vFiles.push(fValue)
-    })
-  }
-
-  vFiles.push({
-    extension: result.extension,
-    path: result.path,
-    name: result.name,
-    id: result.id,
-    size: result.size,
-  })
-
-  setValue(vFiles)
-}
-
-async function restoreFile(item) {
-  const file = await convertUrlToFile(item)
-
-  return {
-    file,
-    item,
-    serverId: item.id,
-  }
-}
-
-async function convertUrlToFile({ path, extension = 'jpeg', name = "imageFile" }) {
-  try {
-    let response = await fetch(path)
-    let data = await response.blob()
-    let metadata = {
-      type: `image/${extension}`,
-    }
-
-    return new File([data], name, metadata)
-  } catch (e) {
-    return null
-  }
-}
-
 function removeFilepondLink() {
   const filepondTags = document.getElementsByClassName('filepond--credits')
-
   Array.from(filepondTags).forEach(aTag => {
     aTag.remove()
   })
 }
 
 function generateUUID() {
-  // Public Domain/MIT
-  let d = new Date().getTime()//Timestamp
-  let d2 = ((typeof performance !== 'undefined') && performance.now && (performance.now()*1000)) || 0//Time in microseconds since page-load or 0 if unsupported
+  let d = new Date().getTime()
+  let d2 = ((typeof performance !== 'undefined') && performance.now && (performance.now()*1000)) || 0
 
   return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, function(c) {
-    let r = Math.random() * 16//random number between 0 and 16
-    if(d > 0){//Use timestamp until depleted
+    let r = Math.random() * 16
+    if(d > 0){
       r = (d + r)%16 | 0
       d = Math.floor(d/16)
-    } else {//Use microseconds since page-load if supported
+    } else {
       r = (d2 + r)%16 | 0
       d2 = Math.floor(d2/16)
     }
@@ -322,12 +210,35 @@ function generateUUID() {
 
 <template>
   <div>
-    <input
-      :id="inputId"
-      type="file"
-      :disabled="disabled"
-    >
+    <!-- Image previews -->
+    <div v-if="imageList.length" :class="multiple ? 'd-flex flex-wrap gap-3 mb-3' : 'mb-3'">
+      <div
+        v-for="(img, index) in imageList"
+        :key="img.id"
+        style="position: relative; display: inline-block;"
+      >
+        <img
+          :src="img.url"
+          style="min-width: 50px; min-height: 50px; max-width: 200px; max-height: 200px; border-radius: 8px; border: 1px solid rgba(var(--v-border-color), var(--v-border-opacity)); display: block; object-fit: cover;"
+        />
+        <button
+          v-if="!disabled"
+          type="button"
+          @click="removeImage(index)"
+          style="position: absolute; top: -8px; right: -8px; width: 24px; height: 24px; border-radius: 50%; background: rgb(var(--v-theme-error)); color: white; border: none; cursor: pointer; display: flex; align-items: center; justify-content: center; font-size: 14px; line-height: 1; box-shadow: 0 2px 4px rgba(0,0,0,0.2);"
+        >
+          ✕
+        </button>
+      </div>
+    </div>
+
+    <!-- FilePond upload input -->
+    <div v-show="showUploader">
+      <input
+        :id="inputId"
+        type="file"
+        :disabled="disabled"
+      >
+    </div>
   </div>
 </template>
-
-

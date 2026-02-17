@@ -134,7 +134,7 @@ async function fetchOneItem(id, mode = 'edit') {
     setValues({
       name: r.name || { uz: '', ru: '', en: '' },
       role: r.role || { uz: '', ru: '', en: '' },
-      image: r.image ? (typeof r.image === 'object' ? r.image.id : r.image) : null,
+      image: r.image || null,
       order: r.order || 1,
       phone: r.phone || '',
       reception: r.reception || { uz: '', ru: '', en: '' },

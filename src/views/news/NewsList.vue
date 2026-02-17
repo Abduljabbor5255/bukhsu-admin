@@ -31,6 +31,7 @@ const isPublished = ref(true)
 
 const headers = [
   { title: 'ID', key: 'id', sortable: false },
+  { title: 'Rasm', key: 'mainImage', sortable: false },
   { title: 'Sarlavha', key: 'title', sortable: false },
   { title: 'Kategoriya', key: 'category', sortable: false },
   { title: 'Holat', key: 'isPublished', sortable: false },
@@ -92,6 +93,7 @@ const content = makeLangFields('content')
 const category = makeLangFields('category')
 
 const { value: mainImage } = useField('mainImage')
+const { value: gallery } = useField('gallery')
 
 const { value: videoUrl, errorMessage: videoUrlError, handleBlur: videoUrlBlur } = useField('videoUrl')
 const videoUrlProps = computed(() => ({
@@ -128,9 +130,9 @@ async function fetchOneItem(id, mode = 'edit') {
       title: r.title || { uz: '', ru: '', en: '' },
       content: r.content || { uz: '', ru: '', en: '' },
       category: r.category || { uz: '', ru: '', en: '' },
-      mainImage: r.mainImage ? (typeof r.mainImage === 'object' ? r.mainImage.id : r.mainImage) : null,
+      mainImage: r.mainImage || null,
       videoUrl: r.videoUrl || '',
-      gallery: r.gallery || [],
+      gallery: (r.gallery || []).map(g => g.image),
     })
     isPublished.value = r.isPublished !== undefined ? r.isPublished : true
     showModal.value = true
@@ -226,6 +228,19 @@ onMounted(() => {
         :loading="loading"
         class="text-no-wrap"
       >
+        <template #item.mainImage="{ item }">
+          <div class="py-2">
+            <VImg
+              v-if="item.raw.mainImage"
+              :src="item.raw.mainImage"
+              width="50"
+              height="50"
+              cover
+              class="rounded"
+            />
+          </div>
+        </template>
+
         <template #item.title="{ item }">
           {{ getValueMatchLocale(item.raw.title) }}
         </template>
@@ -303,8 +318,15 @@ onMounted(() => {
 
           <!-- Main Image (Upload) -->
           <VCol cols="12">
-            <FormUpload v-model="mainImage" name="mainImage" label="Asosiy rasm" upload-service-name="news" :disabled="isDisabledForm" />
+            <label class="text-body-2 font-weight-medium mb-1 d-block">Asosiy rasm</label>
+            <FormUpload v-model="mainImage" name="mainImage" label="Asosiy rasm yuklash" upload-service-name="news" :disabled="isDisabledForm" />
             <span class="text-error text-caption">{{ errors['mainImage'] }}</span>
+          </VCol>
+
+          <!-- Gallery (Multiple) -->
+          <VCol cols="12">
+            <label class="text-body-2 font-weight-medium mb-1 d-block">Galereya rasmlari</label>
+            <FormUpload v-model="gallery" name="gallery" label="Galereya rasmlarini yuklash" upload-service-name="news" :multiple="true" :disabled="isDisabledForm" />
           </VCol>
 
           <!-- Video URL -->

@@ -36,7 +36,7 @@ export default class CoreAxios {
   }
 
   findOne(params = {}) {
-    return this.post('/get', params.params || params)
+    return this.post('/getOne', params.params || params)
   }
 
   create(params = {}) {
