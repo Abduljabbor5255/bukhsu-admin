@@ -137,12 +137,12 @@ export function numberFormat(num) {
 
   return (
     '' +
-        p[0]
-          .split('')
-          .reverse()
-          .reduce(function (acc, num, i, orig) {
-            return num + (num !== '-' && i && !(i % 3) ? ',' : '') + acc
-          }, '')
+    p[0]
+      .split('')
+      .reverse()
+      .reduce(function (acc, num, i, orig) {
+        return num + (num !== '-' && i && !(i % 3) ? ',' : '') + acc
+      }, '')
   )
 }
 
@@ -165,4 +165,12 @@ export function sortObjectValues(obj) {
   }
 
   return loopPackage
+}
+
+const IMAGE_BASE_URL = 'http://62.113.58.93:3005'
+
+export function getFullImageUrl(path) {
+  if (!path) return ''
+  if (path.startsWith('http')) return path
+  return IMAGE_BASE_URL + path
 }

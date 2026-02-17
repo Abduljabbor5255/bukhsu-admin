@@ -232,7 +232,7 @@ onMounted(() => {
           <div class="py-2">
             <VImg
               v-if="item.raw.mainImage"
-              :src="item.raw.mainImage"
+              :src="getFullImageUrl(item.raw.mainImage)"
               width="50"
               height="50"
               cover

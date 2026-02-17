@@ -1,5 +1,6 @@
 <script setup>
 import { uploadApi } from "@/services/upload/upload.service"
+import { getFullImageUrl } from "@/util/helper"
 import { computed, onMounted, ref, watch } from "vue"
 
 import FilePondImagePreview from "@/plugins/fileUploader/filepond-image-preview/js"
@@ -70,31 +71,36 @@ watch(() => props.modelValue, (newVal) => {
     return
   }
 
-  // Single string URL from API
+  // Single string path from API
   if (typeof newVal === 'string') {
-    const alreadyHave = imageList.value.some(img => img.url === newVal)
+    const alreadyHave = imageList.value.some(img => img.path === newVal)
     if (!alreadyHave) {
-      imageList.value = [{ url: newVal, id: generateUUID() }]
+      const displayUrl = getFullImageUrl(newVal)
+      imageList.value = [{ path: newVal, displayUrl, id: generateUUID() }]
     }
     return
   }
 
-  // Array of string URLs
+  // Array of string paths
   if (Array.isArray(newVal) && newVal.length && typeof newVal[0] === 'string') {
-    imageList.value = newVal.map(url => ({ url, id: generateUUID() }))
+    imageList.value = newVal.map(p => ({
+      path: p,
+      displayUrl: getFullImageUrl(p),
+      id: generateUUID(),
+    }))
     return
   }
 }, { immediate: true })
 
-// Emit value when imageList changes
+// Emit value when imageList changes — always emit `path` for the backend
 function emitValue() {
   isEmitting = true
   if (imageList.value.length === 0) {
     emits('update:modelValue', null)
   } else if (props.multiple) {
-    emits('update:modelValue', imageList.value.map(img => img.url))
+    emits('update:modelValue', imageList.value.map(img => img.path))
   } else {
-    emits('update:modelValue', imageList.value[0].url)
+    emits('update:modelValue', imageList.value[0].path)
   }
   // Reset flag on next tick
   setTimeout(() => { isEmitting = false }, 0)
@@ -154,15 +160,17 @@ async function processTrigger(fieldName, file, metadata, load, error, progress, 
       uploadServiceName: props.uploadServiceName,
     })
 
-    // API returns { url: "/uploads/..." } format
+    // API returns { result: { path, full_url } }
     const responseData = uploadRsp.data
-    const url = responseData.url || (responseData.result && responseData.result.path)
+    const result = responseData.result || responseData
+    const path = result.path || responseData.url
+    const fullUrl = result.full_url || getFullImageUrl(path)
 
-    // Add to our image list
-    imageList.value.push({ url, id: generateUUID() })
+    // Add to our image list — path for backend, displayUrl for preview
+    imageList.value.push({ path, displayUrl: fullUrl, id: generateUUID() })
     emitValue()
 
-    load(url)
+    load(path)
 
     // Remove from FilePond after short delay so it doesn't show duplicate preview
     setTimeout(() => {
@@ -218,7 +226,7 @@ function generateUUID() {
         style="position: relative; display: inline-block;"
       >
         <img
-          :src="img.url"
+          :src="img.displayUrl"
           style="min-width: 50px; min-height: 50px; max-width: 200px; max-height: 200px; border-radius: 8px; border: 1px solid rgba(var(--v-border-color), var(--v-border-opacity)); display: block; object-fit: cover;"
         />
         <button

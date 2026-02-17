@@ -1,7 +1,7 @@
 <script setup>
 import { useLoading } from "@/composable/useLoading"
 import { toursApi } from "@/services/tours/tours.service"
-import { getValueMatchLocale } from "@/util/helper"
+import { getFullImageUrl, getValueMatchLocale } from "@/util/helper"
 import { toTypedSchema } from '@vee-validate/yup'
 import { useField, useForm } from 'vee-validate'
 import { computed, onMounted, reactive, ref } from "vue"
@@ -264,7 +264,7 @@ onMounted(() => {
           <div class="py-2">
             <VImg
               v-if="item.raw.mainImage"
-              :src="item.raw.mainImage"
+              :src="getFullImageUrl(item.raw.mainImage)"
               width="50"
               height="50"
               cover
