@@ -6,6 +6,6 @@ services:
       args:
         VITE_APP_URL_V1: ${VITE_APP_URL_V1}
     ports:
-      - "8011:80"
+      - "5552:3007"
     container_name: bukhorcha-admin
     restart: unless-stopped
