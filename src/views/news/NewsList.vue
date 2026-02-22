@@ -111,7 +111,7 @@ async function fetchItems() {
       },
     })
     items.value = data.result
-    totalItems.value = data.pagination.total
+    totalItems.value = data.meta?.total || 0
   } catch (e) {
     console.error(e)
   } finally {
@@ -232,12 +232,18 @@ onMounted(() => {
           <div class="py-2">
             <VImg
               v-if="item.raw.mainImage"
-              :src="getFullImageUrl(item.raw.mainImage)"
+              :src="item.raw.mainImage"
               width="50"
               height="50"
               cover
               class="rounded"
-            />
+            >
+              <template #error>
+                <div class="d-flex align-center justify-center h-100 bg-grey-lighten-3 rounded">
+                  <VIcon icon="tabler-photo-off" size="24" color="grey-darken-1" />
+                </div>
+              </template>
+            </VImg>
           </div>
         </template>
 
