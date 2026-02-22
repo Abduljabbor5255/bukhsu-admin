@@ -31,6 +31,6 @@ RUN rm -rf /usr/share/nginx/html/*
 # Copy built files from builder stage
 COPY --from=builder /app/dist /usr/share/nginx/html
 
-EXPOSE 80
+EXPOSE 3007
 
 ENTRYPOINT ["nginx", "-g", "daemon off;"]
