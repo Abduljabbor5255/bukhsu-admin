@@ -5,7 +5,14 @@ services:
       dockerfile: Dockerfile
       args:
         VITE_APP_URL_V1: ${VITE_APP_URL_V1}
+    environment:
+      - API_PROXY_TARGET=${API_PROXY_TARGET}
     ports:
       - "5552:3007"
     container_name: bukhorcha-admin
     restart: unless-stopped
+    healthcheck:
+      test: [ "CMD", "curl", "-f", "http://localhost:3007/" ]
+      interval: 30s
+      timeout: 10s
+      retries: 3

@@ -22,8 +22,11 @@ RUN yarn build
 # Stage 2: Serve with Nginx
 FROM nginx:alpine
 
-# Copy custom nginx config
-COPY nginx.conf /etc/nginx/conf.d/default.conf
+# Install curl for healthcheck
+RUN apk add --no-cache curl
+
+# Copy custom nginx config to templates so entrypoint substitutes env vars
+COPY nginx.conf /etc/nginx/templates/default.conf.template
 
 # Remove default nginx index page
 RUN rm -rf /usr/share/nginx/html/*
@@ -31,6 +34,7 @@ RUN rm -rf /usr/share/nginx/html/*
 # Copy built files from builder stage
 COPY --from=builder /app/dist /usr/share/nginx/html
 
-EXPOSE 3007
+HEALTHCHECK --interval=30s --timeout=3s \
+    CMD curl -f http://localhost:3007/ || exit 1
 
-ENTRYPOINT ["nginx", "-g", "daemon off;"]
+EXPOSE 3007
