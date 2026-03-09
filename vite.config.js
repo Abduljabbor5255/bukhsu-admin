@@ -72,7 +72,7 @@ export default defineConfig(({ mode }) => {
     server: {
       proxy: {
         '/api': {
-          target: env.API_PROXY_TARGET || 'http://62.113.58.93:3005',
+          target: env.API_PROXY_TARGET,
           changeOrigin: true,
           secure: false,
         },
