@@ -1,117 +1,54 @@
 <script setup>
-import { useLoading } from "@/composable/useLoading"
-import { newsApi } from "@/services/news/news.service"
-import { getValueMatchLocale } from "@/util/helper"
-import { toTypedSchema } from '@vee-validate/yup'
-import { useField, useForm } from 'vee-validate'
-import { computed, onMounted, reactive, ref } from "vue"
+import DeleteModal from '@/components/DeleteModal.vue'
+import BasePagination from '@/components/pagination/BasePagination.vue'
+import { useLoading } from '@/composable/useLoading'
+import { newsApi } from '@/services/news/news.service'
+import { onMounted, ref, watch } from 'vue'
 import { VDataTableServer } from 'vuetify/labs/VDataTable'
-import * as yup from 'yup'
-
-import AppModal from "@/components/AppModal.vue"
-import DeleteModal from "@/components/DeleteModal.vue"
-import FormUpload from "@/components/form/FormUpload.vue"
-import BasePagination from "@/components/pagination/BasePagination.vue"
 
 const { loading, startFetching, finishFetching } = useLoading()
 
-const items = ref([])
-const totalItems = ref(0)
+const items        = ref([])
+const totalItems   = ref(0)
 const itemsPerPage = ref(10)
-const currentPage = ref(1)
+const currentPage  = ref(1)
+const searchQuery  = ref('')
+const filterCat    = ref('')
+const filterStatus = ref('')
 
-const showModal = ref(false)
-const isDisabledForm = ref(false)
-const isDeleteModal = ref(false)
-const isSnackbarVisible = ref(false)
-const snackbarText = ref("")
-const itemID = ref(null)
-const btnLoading = ref(false)
-const isPublished = ref(true)
+const isDeleteModal      = ref(false)
+const deleteId           = ref(null)
+const btnLoading         = ref(false)
+const isSnackbarVisible  = ref(false)
+const snackbarText       = ref('')
+
+const CATEGORIES = ['Tadbir', "E'lon", 'Ilmiy', 'Xalqaro', 'Umumiy']
 
 const headers = [
-  { title: 'ID', key: 'id', sortable: false },
-  { title: 'Rasm', key: 'mainImage', sortable: false },
-  { title: 'Sarlavha', key: 'title', sortable: false },
-  { title: 'Kategoriya', key: 'category', sortable: false },
-  { title: 'Holat', key: 'isPublished', sortable: false },
-  { title: 'Amallar', key: 'actions', sortable: false },
+  { title: 'Rasm',      key: 'image',       sortable: false, width: 72 },
+  { title: 'Sarlavha',  key: 'title',       sortable: false },
+  { title: 'Kategoriya',key: 'categories',  sortable: false },
+  { title: 'Muallif',   key: 'author',      sortable: false },
+  { title: 'Status',    key: 'draft',       sortable: false },
+  { title: 'Sana',      key: 'publishedAt', sortable: false },
+  { title: 'Ko\'rishlar', key: 'views',     sortable: false },
+  { title: 'Amallar',   key: 'actions',     sortable: false, width: 120 },
 ]
-
-const multiLangObj = () => yup.object({
-  uz: yup.string().required('Majburiy maydon'),
-  ru: yup.string().required('Majburiy maydon'),
-  en: yup.string().required('Majburiy maydon'),
-})
-
-const { values, handleSubmit, resetForm, setValues, errors } = useForm({
-  initialValues: {
-    title: { uz: '', ru: '', en: '' },
-    content: { uz: '', ru: '', en: '' },
-    category: { uz: '', ru: '', en: '' },
-    mainImage: null,
-    videoUrl: '',
-    gallery: [],
-  },
-  validationSchema: toTypedSchema(yup.object({
-    title: multiLangObj(),
-    content: multiLangObj(),
-    category: multiLangObj(),
-    mainImage: yup.mixed().required('Majburiy maydon'),
-    videoUrl: yup.string().nullable(),
-    gallery: yup.array().nullable(),
-  })),
-})
-
-const makeLangFields = (basePath) => {
-  const { value: uz, errorMessage: uzError, handleBlur: uzBlur } = useField(`${basePath}.uz`)
-  const { value: ru, errorMessage: ruError, handleBlur: ruBlur } = useField(`${basePath}.ru`)
-  const { value: en, errorMessage: enError, handleBlur: enBlur } = useField(`${basePath}.en`)
-
-  const uzProps = computed(() => ({
-    'error-messages': uzError.value,
-    onBlur: uzBlur,
-  }))
-  const ruProps = computed(() => ({
-    'error-messages': ruError.value,
-    onBlur: ruBlur,
-  }))
-  const enProps = computed(() => ({
-    'error-messages': enError.value,
-    onBlur: enBlur,
-  }))
-
-  return reactive({
-    uz, uzProps,
-    ru, ruProps,
-    en, enProps,
-  })
-}
-
-const title = makeLangFields('title')
-const content = makeLangFields('content')
-const category = makeLangFields('category')
-
-const { value: mainImage } = useField('mainImage')
-const { value: gallery } = useField('gallery')
-
-const { value: videoUrl, errorMessage: videoUrlError, handleBlur: videoUrlBlur } = useField('videoUrl')
-const videoUrlProps = computed(() => ({
-  'error-messages': videoUrlError.value,
-  onBlur: videoUrlBlur,
-}))
 
 async function fetchItems() {
   startFetching()
   try {
     const { data } = await newsApi.findAll({
-      params: {
-        page: currentPage.value,
-        limit: itemsPerPage.value,
-      },
+      page:       currentPage.value,
+      limit:      itemsPerPage.value,
+      search:     searchQuery.value || undefined,
+      category:   filterCat.value   || undefined,
+      draft:      filterStatus.value === 'draft'      ? true
+                : filterStatus.value === 'published'  ? false
+                : undefined,
     })
-    items.value = data.result
-    totalItems.value = data.meta?.total || 0
+    items.value      = data.result  ?? data.data  ?? []
+    totalItems.value = data.meta?.total ?? data.total ?? 0
   } catch (e) {
     console.error(e)
   } finally {
@@ -119,59 +56,21 @@ async function fetchItems() {
   }
 }
 
-async function fetchOneItem(id, mode = 'edit') {
-  itemID.value = id
-  isDisabledForm.value = mode === 'show'
-  startFetching()
-  try {
-    const { data } = await newsApi.findOne({ params: { id } })
-    const r = data.result
-    setValues({
-      title: r.title || { uz: '', ru: '', en: '' },
-      content: r.content || { uz: '', ru: '', en: '' },
-      category: r.category || { uz: '', ru: '', en: '' },
-      mainImage: r.mainImage || null,
-      videoUrl: r.videoUrl || '',
-      gallery: (r.gallery || []).map(g => g.image),
-    })
-    isPublished.value = r.isPublished !== undefined ? r.isPublished : true
-    showModal.value = true
-  } catch (e) {
-    console.error(e)
-  } finally {
-    finishFetching()
-  }
-}
-
-const submitItem = handleSubmit(async (formValues) => {
-  btnLoading.value = true
-  try {
-    const payload = {
-      ...formValues,
-      isPublished: isPublished.value,
-    }
-    if (itemID.value) {
-      await newsApi.update({ params: { id: itemID.value, ...payload } })
-      snackbarText.value = "Yangilik muvaffaqiyatli yangilandi"
-    } else {
-      await newsApi.create({ params: payload })
-      snackbarText.value = "Yangilik muvaffaqiyatli yaratildi"
-    }
-    isSnackbarVisible.value = true
-    closeModals()
-    fetchItems()
-  } catch (e) {
-    console.error(e)
-  } finally {
-    btnLoading.value = false
-  }
+let searchTimer = null
+watch(searchQuery, () => {
+  clearTimeout(searchTimer)
+  searchTimer = setTimeout(() => { currentPage.value = 1; fetchItems() }, 350)
 })
+watch([filterCat, filterStatus], () => { currentPage.value = 1; fetchItems() })
+
+function openDeleteModal(id) { deleteId.value = id; isDeleteModal.value = true }
+function closeDeleteModal()  { isDeleteModal.value = false; deleteId.value = null }
 
 async function deleteItem() {
   btnLoading.value = true
   try {
-    await newsApi.remove({ params: { id: itemID.value } })
-    snackbarText.value = "Yangilik muvaffaqiyatli o'chirildi"
+    await newsApi.remove({ params: { id: deleteId.value } })
+    snackbarText.value      = "Yangilik o'chirildi"
     isSnackbarVisible.value = true
     closeDeleteModal()
     fetchItems()
@@ -182,44 +81,64 @@ async function deleteItem() {
   }
 }
 
-function openCreateModal() {
-  resetForm()
-  itemID.value = null
-  isDisabledForm.value = false
-  isPublished.value = true
-  showModal.value = true
+function formatDate(d) {
+  if (!d) return '—'
+  return new Date(d).toLocaleDateString('uz-UZ', { year: 'numeric', month: '2-digit', day: '2-digit' })
 }
 
-function openDeleteModal(id) {
-  itemID.value = id
-  isDeleteModal.value = true
-}
-
-function closeModals() {
-  showModal.value = false
-  itemID.value = null
-  resetForm()
-}
-
-function closeDeleteModal() {
-  isDeleteModal.value = false
-  itemID.value = null
-}
-
-onMounted(() => {
-  fetchItems()
-})
+onMounted(fetchItems)
 </script>
 
 <template>
   <section>
     <VCard>
-      <VCardText class="d-flex justify-space-between align-center">
-        <h2 class="text-h4">Yangiliklar</h2>
-        <VBtn @click="openCreateModal" color="primary" prepend-icon="tabler-plus">
-          Qo'shish
+      <!-- Top bar -->
+      <VCardText class="d-flex flex-wrap align-center gap-3 pb-2">
+        <h2 class="text-h5 font-weight-bold mr-auto">Yangiliklar</h2>
+
+        <!-- Search -->
+        <VTextField
+          v-model="searchQuery"
+          placeholder="Qidirish..."
+          prepend-inner-icon="tabler-search"
+          density="compact"
+          hide-details
+          style="max-width: 220px"
+          clearable
+        />
+
+        <!-- Category filter -->
+        <VSelect
+          v-model="filterCat"
+          :items="['', ...CATEGORIES]"
+          placeholder="Kategoriya"
+          density="compact"
+          hide-details
+          style="max-width: 160px"
+          clearable
+        />
+
+        <!-- Status filter -->
+        <VSelect
+          v-model="filterStatus"
+          :items="[
+            { title: 'Barchasi', value: '' },
+            { title: 'Nashr',    value: 'published' },
+            { title: 'Qoralama', value: 'draft' },
+          ]"
+          item-title="title"
+          item-value="value"
+          density="compact"
+          hide-details
+          style="max-width: 140px"
+        />
+
+        <VBtn color="primary" prepend-icon="tabler-plus" :to="{ name: 'news-create' }">
+          Yangi yangilik
         </VBtn>
       </VCardText>
+
+      <VDivider />
 
       <VDataTableServer
         :items="items"
@@ -228,50 +147,132 @@ onMounted(() => {
         :loading="loading"
         class="text-no-wrap"
       >
-        <template #item.mainImage="{ item }">
-          <div class="py-2">
+        <!-- Cover image -->
+        <template #item.image="{ item }">
+          <div class="py-1">
             <VImg
-              v-if="item.raw.mainImage"
-              :src="item.raw.mainImage"
-              width="50"
-              height="50"
+              v-if="item.raw.image"
+              :src="item.raw.image"
+              width="64"
+              height="44"
               cover
               class="rounded"
+              style="min-width:64px"
             >
               <template #error>
                 <div class="d-flex align-center justify-center h-100 bg-grey-lighten-3 rounded">
-                  <VIcon icon="tabler-photo-off" size="24" color="grey-darken-1" />
+                  <VIcon icon="tabler-photo-off" size="18" color="grey-darken-1" />
                 </div>
               </template>
             </VImg>
+            <div
+              v-else
+              class="d-flex align-center justify-center rounded bg-grey-lighten-3"
+              style="width:64px;height:44px"
+            >
+              <VIcon icon="tabler-photo" size="18" color="grey-darken-1" />
+            </div>
           </div>
         </template>
 
+        <!-- Title + excerpt tooltip -->
         <template #item.title="{ item }">
-          {{ getValueMatchLocale(item.raw.title) }}
+          <div style="max-width: 280px">
+            <VTooltip :text="item.raw.description || item.raw.title" location="top">
+              <template #activator="{ props }">
+                <span v-bind="props" class="d-block text-truncate font-weight-medium">
+                  {{ item.raw.title }}
+                </span>
+              </template>
+            </VTooltip>
+            <span v-if="item.raw.featured" class="text-caption text-warning d-flex align-center gap-1 mt-1">
+              <VIcon icon="tabler-star-filled" size="12" color="warning" />
+              Featured
+            </span>
+          </div>
         </template>
 
-        <template #item.category="{ item }">
-          {{ getValueMatchLocale(item.raw.category) }}
+        <!-- Category badge -->
+        <template #item.categories="{ item }">
+          <VChip
+            v-if="item.raw.categories?.length"
+            size="x-small"
+            color="success"
+            variant="tonal"
+          >
+            {{ item.raw.categories[0] }}
+          </VChip>
+          <span v-else class="text-medium-emphasis text-caption">—</span>
         </template>
 
-        <template #item.isPublished="{ item }">
-          <VChip :color="item.raw.isPublished ? 'success' : 'warning'" size="small">
-            {{ item.raw.isPublished ? 'Faol' : 'Nofaol' }}
+        <!-- Author -->
+        <template #item.author="{ item }">
+          <span class="text-body-2">{{ item.raw.author || '—' }}</span>
+        </template>
+
+        <!-- Status badge -->
+        <template #item.draft="{ item }">
+          <VChip
+            :color="item.raw.draft ? 'default' : 'success'"
+            size="x-small"
+            variant="tonal"
+          >
+            {{ item.raw.draft ? 'Qoralama' : 'Nashr' }}
           </VChip>
         </template>
 
-        <template #item.actions="{ item }">
-          <IconBtn size="small" @click="fetchOneItem(item.raw.id, 'edit')">
-            <VIcon icon="tabler-edit" />
-          </IconBtn>
-          <IconBtn size="small" color="error" @click="openDeleteModal(item.raw.id)">
-            <VIcon icon="tabler-trash" />
-          </IconBtn>
+        <!-- Date -->
+        <template #item.publishedAt="{ item }">
+          <span class="text-body-2 text-medium-emphasis">{{ formatDate(item.raw.publishedAt) }}</span>
         </template>
 
+        <!-- Views -->
+        <template #item.views="{ item }">
+          <span class="text-body-2 text-medium-emphasis">{{ (item.raw.views ?? 0).toLocaleString() }}</span>
+        </template>
+
+        <!-- Actions -->
+        <template #item.actions="{ item }">
+          <div class="d-flex align-center gap-1">
+            <VTooltip text="Tahrirlash" location="top">
+              <template #activator="{ props }">
+                <IconBtn v-bind="props" size="small" :to="{ name: 'news-edit', params: { id: item.raw._id ?? item.raw.id } }">
+                  <VIcon icon="tabler-edit" />
+                </IconBtn>
+              </template>
+            </VTooltip>
+
+            <VTooltip text="Saytda ko'rish" location="top">
+              <template #activator="{ props }">
+                <IconBtn
+                  v-bind="props"
+                  size="small"
+                  color="secondary"
+                  :href="`/news/${item.raw.slug}`"
+                  target="_blank"
+                  tag="a"
+                >
+                  <VIcon icon="tabler-external-link" />
+                </IconBtn>
+              </template>
+            </VTooltip>
+
+            <VTooltip text="O'chirish" location="top">
+              <template #activator="{ props }">
+                <IconBtn v-bind="props" size="small" color="error" @click="openDeleteModal(item.raw._id ?? item.raw.id)">
+                  <VIcon icon="tabler-trash" />
+                </IconBtn>
+              </template>
+            </VTooltip>
+          </div>
+        </template>
+
+        <!-- Pagination -->
         <template #bottom>
-          <div class="d-flex justify-center pa-4">
+          <div class="d-flex justify-center align-center pa-4 gap-4">
+            <span class="text-caption text-medium-emphasis">
+              Jami: {{ totalItems }} ta
+            </span>
             <BasePagination
               v-model="currentPage"
               :length="Math.ceil(totalItems / itemsPerPage)"
@@ -283,84 +284,10 @@ onMounted(() => {
       </VDataTableServer>
     </VCard>
 
-    <AppModal v-model="showModal" @close-modal="closeModals">
-      <template #header>
-        <h3>{{ itemID ? (isDisabledForm ? 'Ko\'rish' : 'Tahrirlash') : 'Yangilik yaratish' }}</h3>
-      </template>
-      <template #body>
-        <VRow>
-          <!-- Title -->
-          <VCol cols="12">
-            <VTextField v-model="title.uz" v-bind="title.uzProps" label="Sarlavha (UZ)" :disabled="isDisabledForm" />
-          </VCol>
-          <VCol cols="12">
-            <VTextField v-model="title.ru" v-bind="title.ruProps" label="Sarlavha (RU)" :disabled="isDisabledForm" />
-          </VCol>
-          <VCol cols="12">
-            <VTextField v-model="title.en" v-bind="title.enProps" label="Sarlavha (EN)" :disabled="isDisabledForm" />
-          </VCol>
-
-          <!-- Content -->
-          <VCol cols="12">
-            <VTextarea v-model="content.uz" v-bind="content.uzProps" label="Kontent (UZ)" :disabled="isDisabledForm" />
-          </VCol>
-          <VCol cols="12">
-            <VTextarea v-model="content.ru" v-bind="content.ruProps" label="Kontent (RU)" :disabled="isDisabledForm" />
-          </VCol>
-          <VCol cols="12">
-            <VTextarea v-model="content.en" v-bind="content.enProps" label="Kontent (EN)" :disabled="isDisabledForm" />
-          </VCol>
-
-          <!-- Category -->
-          <VCol cols="12" md="4">
-            <VTextField v-model="category.uz" v-bind="category.uzProps" label="Kategoriya (UZ)" :disabled="isDisabledForm" />
-          </VCol>
-          <VCol cols="12" md="4">
-            <VTextField v-model="category.ru" v-bind="category.ruProps" label="Kategoriya (RU)" :disabled="isDisabledForm" />
-          </VCol>
-          <VCol cols="12" md="4">
-            <VTextField v-model="category.en" v-bind="category.enProps" label="Kategoriya (EN)" :disabled="isDisabledForm" />
-          </VCol>
-
-          <!-- Main Image (Upload) -->
-          <VCol cols="12">
-            <label class="text-body-2 font-weight-medium mb-1 d-block">Asosiy rasm</label>
-            <FormUpload v-model="mainImage" name="mainImage" label="Asosiy rasm yuklash" upload-service-name="news" :disabled="isDisabledForm" />
-            <span class="text-error text-caption">{{ errors['mainImage'] }}</span>
-          </VCol>
-
-          <!-- Gallery (Multiple) -->
-          <VCol cols="12">
-            <label class="text-body-2 font-weight-medium mb-1 d-block">Galereya rasmlari</label>
-            <FormUpload v-model="gallery" name="gallery" label="Galereya rasmlarini yuklash" upload-service-name="news" :multiple="true" :disabled="isDisabledForm" />
-          </VCol>
-
-          <!-- Video URL -->
-          <VCol cols="12">
-            <VTextField v-model="videoUrl" v-bind="videoUrlProps" label="Video URL" :disabled="isDisabledForm" />
-          </VCol>
-
-          <!-- Is Published -->
-          <VCol cols="12">
-            <VSwitch v-model="isPublished" label="Chop etilsinmi?" :disabled="isDisabledForm" />
-          </VCol>
-        </VRow>
-      </template>
-      <template #footer>
-        <div class="d-flex justify-end gap-2 mt-4" v-if="!isDisabledForm">
-          <VBtn color="secondary" variant="tonal" @click="closeModals">Bekor qilish</VBtn>
-          <VBtn color="primary" :loading="btnLoading" @click="submitItem">Saqlash</VBtn>
-        </div>
-      </template>
-    </AppModal>
-
+    <!-- Delete modal -->
     <DeleteModal v-model="isDeleteModal" @close-modal="closeDeleteModal">
-      <template #header>
-        <h3>Yangilikni o'chirish</h3>
-      </template>
-      <template #body>
-        Haqiqatan ham bu yangilikni o'chirmoqchimisiz?
-      </template>
+      <template #header><h3>Yangilikni o'chirish</h3></template>
+      <template #body>Haqiqatan ham bu yangilikni o'chirmoqchimisiz? Bu amalni bekor qilib bo'lmaydi.</template>
       <template #footer>
         <div class="d-flex justify-end gap-2 mt-4">
           <VBtn color="secondary" variant="tonal" @click="closeDeleteModal">Bekor qilish</VBtn>
@@ -369,7 +296,8 @@ onMounted(() => {
       </template>
     </DeleteModal>
 
-    <VSnackbar v-model="isSnackbarVisible" color="success">
+    <VSnackbar v-model="isSnackbarVisible" color="success" :timeout="3000">
+      <VIcon icon="tabler-check" class="me-2" />
       {{ snackbarText }}
     </VSnackbar>
   </section>
