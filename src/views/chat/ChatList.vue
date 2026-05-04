@@ -201,39 +201,44 @@ onUnmounted(() => clearInterval(poll))
 </script>
 
 <template>
-  <section>
-    <!-- Stat chips (compact) -->
-    <div class="d-flex gap-3 mb-4 flex-wrap">
-      <VChip prepend-icon="tabler-users" color="primary" variant="tonal" size="default">
-        {{ users.length }} foydalanuvchi
-      </VChip>
-      <VChip prepend-icon="tabler-wifi" color="success" variant="tonal" size="default">
-        {{ onlineCount }} online
-      </VChip>
-      <VChip prepend-icon="tabler-message-exclamation" color="warning" variant="tonal" size="default">
-        {{ threads.filter(t => !t.hasOwnerReply).length }} javob kutilmoqda
-      </VChip>
-    </div>
+  <section class="chat-page">
+    <VCard class="chat-card">
 
-    <!-- Tabs -->
-    <VCard>
-      <VTabs v-model="tab" color="primary">
-        <VTab value="inbox">
-          <VIcon start icon="tabler-inbox" size="18" />
-          Xabarlar
-          <span v-if="unreadCount" class="tab-count">{{ unreadCount }}</span>
-        </VTab>
-        <VTab value="users">
-          <VIcon start icon="tabler-users" size="18" />
-          Foydalanuvchilar
-        </VTab>
-      </VTabs>
+      <!-- Tabs + inline stats -->
+      <div class="chat-header">
+        <VTabs v-model="tab" color="primary" density="compact" class="chat-tabs">
+          <VTab value="inbox">
+            <VIcon start icon="tabler-inbox" size="16" />
+            Xabarlar
+            <span v-if="unreadCount" class="tab-count">{{ unreadCount }}</span>
+          </VTab>
+          <VTab value="users">
+            <VIcon start icon="tabler-users" size="16" />
+            Foydalanuvchilar
+          </VTab>
+        </VTabs>
+
+        <!-- Inline stats -->
+        <div class="chat-header-stats">
+          <span class="stat-chip stat-chip--blue">
+            <VIcon icon="tabler-users" size="13" />
+            {{ users.length }}
+          </span>
+          <span class="stat-chip stat-chip--green">
+            <VIcon icon="tabler-wifi" size="13" />
+            {{ onlineCount }} online
+          </span>
+          <span v-if="threads.filter(t=>!t.hasOwnerReply).length" class="stat-chip stat-chip--amber">
+            <VIcon icon="tabler-message-exclamation" size="13" />
+            {{ threads.filter(t=>!t.hasOwnerReply).length }} kutilmoqda
+          </span>
+        </div>
+      </div>
+
       <VDivider />
 
-      <!-- v-show used instead of VTabsWindow to avoid rendering leaks -->
-
-        <!-- ═══════════════ INBOX ═══════════════ -->
-        <div v-show="tab === 'inbox'">
+      <!-- ═══════════════ INBOX ═══════════════ -->
+      <div v-show="tab === 'inbox'" class="chat-body-inner">
           <div class="chat-shell">
 
             <!-- Thread list -->
@@ -375,8 +380,8 @@ onUnmounted(() => clearInterval(poll))
           </div>
         </div>
 
-        <!-- ═══════════════ USERS ═══════════════ -->
-        <div v-show="tab === 'users'" class="pa-4">
+      <!-- ═══════════════ USERS ═══════════════ -->
+      <div v-show="tab === 'users'" class="chat-body-inner users-panel">
 
           <!-- Search + counters -->
           <div class="d-flex justify-space-between align-center flex-wrap gap-3 mb-3">
@@ -458,18 +463,75 @@ onUnmounted(() => clearInterval(poll))
             </table>
           </div>
         </div>
+
     </VCard>
   </section>
 </template>
 
 <style scoped>
-/* ── Layout ─────────────────────────────────────────────────────── */
+/* ══════════════════════════════════════════════════════════
+   PAGE: fills content area, no page scroll
+══════════════════════════════════════════════════════════ */
+.chat-page {
+  /* Vuetify sets --v-layout-top for the AppBar offset */
+  height: calc(100dvh - var(--v-layout-top, 64px) - 32px);
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+
+.chat-card {
+  flex: 1;
+  min-height: 0;
+  display: flex !important;
+  flex-direction: column;
+}
+
+/* Tab bar + inline stats row */
+.chat-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding-right: 12px;
+  flex-shrink: 0;
+  border-bottom: 1px solid rgba(var(--v-border-color), var(--v-border-opacity));
+}
+
+.chat-tabs { flex-shrink: 0; }
+
+.chat-header-stats {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  flex-wrap: nowrap;
+}
+
+.stat-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 11px;
+  font-weight: 600;
+  padding: 3px 8px;
+  border-radius: 999px;
+  white-space: nowrap;
+}
+.stat-chip--blue  { background: rgba(99,102,241,.12); color: #6366f1; }
+.stat-chip--green { background: rgba(34,197,94,.12);  color: #16a34a; }
+.stat-chip--amber { background: rgba(245,158,11,.12); color: #d97706; }
+
+/* Content area below tabs — fills remaining VCard height */
+.chat-body-inner {
+  flex: 1;
+  min-height: 0;
+  overflow: hidden;
+  position: relative;
+}
+
+/* ── Chat shell (inbox) ──────────────────────────────────── */
 .chat-shell {
   display: flex;
-  /* Fill remaining viewport: subtract topbar + stat cards + tabs + paddings */
-  height: calc(100dvh - 300px);
-  min-height: 400px;
-  max-height: 700px;
+  height: 100%;
   overflow: hidden;
 }
 
@@ -760,6 +822,12 @@ onUnmounted(() => clearInterval(poll))
   text-align: right;
 }
 
+/* Users panel scrolls internally */
+.users-panel {
+  overflow-y: auto;
+  padding: 16px;
+}
+
 /* Users search */
 .users-search-wrap {
   position: relative;
@@ -845,6 +913,22 @@ onUnmounted(() => clearInterval(poll))
   padding: 0 5px;
   margin-left: 6px;
   line-height: 1;
+}
+
+/* Responsive: narrow screens */
+@media (max-width: 700px) {
+  .chat-thread-col {
+    width: 220px;
+  }
+  .chat-header-stats { display: none; }
+  .chat-window-header { padding: .6rem .8rem; }
+  .chat-messages { padding: .75rem .9rem; }
+  .chat-composer-wrap { padding: .5rem .75rem; }
+}
+@media (max-width: 520px) {
+  .chat-thread-col { width: 180px; }
+  .chat-thread-info__name { font-size: .76rem; }
+  .chat-thread-avatar { width: 32px; height: 32px; font-size: .74rem; }
 }
 
 /* Spinner */
