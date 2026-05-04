@@ -1,3 +1,3 @@
 import { BuxduNextService } from '@/services/axios/buxduNext.axios'
 
-export const newsApi = new BuxduNextService('/api/news')
+export const teachersApi = new BuxduNextService('/api/teachers')

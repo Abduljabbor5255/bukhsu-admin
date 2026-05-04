@@ -1,5 +1,5 @@
 <script setup>
-import { useRouter } from 'vue-router';
+import { useRouter } from 'vue-router'
 
 const router = useRouter()
 
@@ -12,25 +12,32 @@ const modules = [
     route: 'news',
   },
   {
-    title: 'Turlar',
-    description: 'Turlar ro\'yxati va boshqaruvi',
-    icon: 'tabler-map-2',
+    title: 'Resurslar',
+    description: 'Maqolalar, kitoblar va ilmiy materiallar boshqaruvi',
+    icon: 'tabler-books',
+    color: 'info',
+    route: 'resources',
+  },
+  {
+    title: 'O\'qituvchilar',
+    description: 'O\'qituvchilar profili, maqolalari va aloqa ma\'lumotlari',
+    icon: 'tabler-school',
     color: 'success',
-    route: 'tours',
+    route: 'teachers',
   },
   {
-    title: 'Rahbariyat',
-    description: 'Rahbariyat — lavozim, ism, familiya, ish vaqti',
-    icon: 'tabler-users',
+    title: 'O\'quvchilar',
+    description: 'O\'quvchilar va ularning muvaffaqiyatlari',
+    icon: 'tabler-users-group',
     color: 'warning',
-    route: 'management',
+    route: 'students',
   },
   {
-    title: 'Tug\'ilgan kunlar',
-    description: 'Tug\'ilgan kunlar ro\'yxati va boshqaruvi',
-    icon: 'tabler-cake',
+    title: 'Tadbirlar',
+    description: 'Konferensiyalar, seminarlar va boshqa tadbirlar',
+    icon: 'tabler-calendar-event',
     color: 'error',
-    route: 'birthdays',
+    route: 'events',
   },
 ]
 
@@ -48,7 +55,7 @@ function navigateTo(routeName) {
         :key="mod.route"
         cols="12"
         sm="6"
-        md="3"
+        md="4"
       >
         <VCard
           class="module-card cursor-pointer"

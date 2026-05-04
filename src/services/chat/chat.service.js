@@ -9,7 +9,23 @@ const chatInstance = axios.create({
 })
 
 export const chatApi = {
+  // Registered users list
   getUsers() {
     return chatInstance.get('/api/admin/users')
+  },
+
+  // All chat threads (conversations) with user info
+  getThreads() {
+    return chatInstance.get('/api/admin/threads')
+  },
+
+  // Messages in a specific thread
+  getMessages(threadId) {
+    return chatInstance.get(`/api/admin/threads/${threadId}`)
+  },
+
+  // Admin reply in a thread
+  reply(threadId, text) {
+    return chatInstance.post(`/api/admin/threads/${threadId}`, { text })
   },
 }
