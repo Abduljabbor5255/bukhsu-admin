@@ -53,8 +53,8 @@ const sendError      = ref('')
 const msgsContainer  = ref(null)
 const textareaRef    = ref(null)
 
-// Track which threads the admin has already opened (mark as read locally)
-const readThreadIds = ref(new Set())
+// Track which threads the admin has already opened (plain array — reactive)
+const readThreadIds = ref([])
 
 // Threads sorted by most recent first
 const sortedThreads = computed(() =>
@@ -64,7 +64,7 @@ const sortedThreads = computed(() =>
 )
 
 const unreadCount = computed(() =>
-  threads.value.filter(t => !t.hasOwnerReply && !readThreadIds.value.has(t.id)).length
+  threads.value.filter(t => !t.hasOwnerReply && !readThreadIds.value.includes(t.id)).length
 )
 
 async function fetchThreads() {
@@ -79,7 +79,8 @@ async function fetchThreads() {
 // Open thread — full load with loading indicator, scroll to bottom
 async function openThread(thread) {
   activeThread.value = thread
-  readThreadIds.value.add(thread.id)   // mark as read locally
+  if (!readThreadIds.value.includes(thread.id))
+    readThreadIds.value = [...readThreadIds.value, thread.id]
   messages.value    = []
   msgsLoading.value = true
   sendError.value   = ''
@@ -240,10 +241,10 @@ onUnmounted(() => clearInterval(poll))
       </VTabs>
       <VDivider />
 
-      <VTabsWindow v-model="tab">
+      <!-- v-show used instead of VTabsWindow to avoid rendering leaks -->
 
         <!-- ═══════════════ INBOX ═══════════════ -->
-        <VTabsWindowItem value="inbox">
+        <div v-show="tab === 'inbox'">
           <div class="chat-shell">
 
             <!-- Thread list -->
@@ -288,7 +289,7 @@ onUnmounted(() => clearInterval(poll))
                       {{ thread.lastMessage }}
                     </div>
                   </div>
-                  <span v-if="!thread.hasOwnerReply && !readThreadIds.has(thread.id)" class="chat-unread-dot" />
+                  <span v-if="!thread.hasOwnerReply && !readThreadIds.includes(thread.id)" class="chat-unread-dot" />
                 </div>
               </div>
             </div>
@@ -383,10 +384,10 @@ onUnmounted(() => clearInterval(poll))
               </template>
             </div>
           </div>
-        </VTabsWindowItem>
+        </div>
 
         <!-- ═══════════════ USERS ═══════════════ -->
-        <VTabsWindowItem value="users">
+        <div v-show="tab === 'users'">
           <div class="d-flex justify-space-between align-center flex-wrap gap-3 pa-4 pb-2">
             <div class="d-flex align-center gap-2">
               <span class="text-subtitle-1 font-weight-bold">Ro'yxatdan o'tganlar</span>
@@ -437,8 +438,7 @@ onUnmounted(() => clearInterval(poll))
               </div>
             </template>
           </VDataTable>
-        </VTabsWindowItem>
-      </VTabsWindow>
+        </div>
     </VCard>
   </section>
 </template>
