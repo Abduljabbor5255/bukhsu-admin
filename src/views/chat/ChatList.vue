@@ -2,25 +2,23 @@
 import { chatApi } from '@/services/chat/chat.service'
 import { nextTick, onMounted, onUnmounted, ref, computed } from 'vue'
 
-// ── Tabs ──────────────────────────────────────────────────────────
-const tab = ref('inbox') // 'inbox' | 'users'
+const tab = ref('inbox')
 
-// ── Users tab ─────────────────────────────────────────────────────
+// ── Users ─────────────────────────────────────────────────────────
 const users        = ref([])
 const usersLoading = ref(false)
 const userSearch   = ref('')
 
 const userHeaders = [
-  { title: '#',               key: 'index',     sortable: false, width: 52 },
-  { title: 'Foydalanuvchi',   key: 'user',      sortable: false           },
-  { title: 'Username',        key: 'username',   sortable: true            },
-  { title: 'Holat',           key: 'status',     sortable: false, width: 120 },
-  { title: 'Ro\'yxatdan o\'tgan', key: 'createdAt', sortable: true        },
+  { title: '#',                   key: 'index',     sortable: false, width: 52 },
+  { title: 'Foydalanuvchi',       key: 'user',      sortable: false },
+  { title: 'Username',            key: 'username',  sortable: true },
+  { title: 'Holat',               key: 'status',    sortable: false, width: 120 },
+  { title: "Ro'yxatdan o'tgan",   key: 'createdAt', sortable: true },
 ]
 
 function isOnline(u) {
-  if (!u.sessionToken || !u.sessionExpiresAt) return false
-  return new Date(u.sessionExpiresAt) > new Date()
+  return u.sessionToken && u.sessionExpiresAt && new Date(u.sessionExpiresAt) > new Date()
 }
 
 const filteredUsers = computed(() => {
@@ -32,21 +30,18 @@ const filteredUsers = computed(() => {
   )
 })
 
-const onlineCount  = computed(() => users.value.filter(isOnline).length)
+const onlineCount = computed(() => users.value.filter(isOnline).length)
 
 async function fetchUsers() {
   usersLoading.value = true
   try {
     const { data } = await chatApi.getUsers()
     users.value = Array.isArray(data) ? data : []
-  } catch (e) {
-    console.error(e)
-  } finally {
-    usersLoading.value = false
-  }
+  } catch (e) { console.error(e) }
+  finally { usersLoading.value = false }
 }
 
-// ── Inbox tab ─────────────────────────────────────────────────────
+// ── Inbox ─────────────────────────────────────────────────────────
 const threads        = ref([])
 const threadsLoading = ref(false)
 const activeThread   = ref(null)
@@ -56,25 +51,13 @@ const replyText      = ref('')
 const replySending   = ref(false)
 const msgsContainer  = ref(null)
 
-const threadHeaders = [
-  { title: 'Foydalanuvchi',  key: 'user',         sortable: false },
-  { title: 'So\'nggi xabar', key: 'lastMessage',   sortable: false },
-  { title: 'Xabarlar',       key: 'messageCount',  sortable: true, width: 100 },
-  { title: 'Javob',          key: 'hasOwnerReply', sortable: false, width: 100 },
-  { title: 'Yangilangan',    key: 'updatedAt',     sortable: true  },
-  { title: '',               key: 'actions',       sortable: false, width: 80  },
-]
-
 async function fetchThreads() {
   threadsLoading.value = true
   try {
     const { data } = await chatApi.getThreads()
     threads.value = Array.isArray(data) ? data : []
-  } catch (e) {
-    console.error(e)
-  } finally {
-    threadsLoading.value = false
-  }
+  } catch (e) { console.error(e) }
+  finally { threadsLoading.value = false }
 }
 
 async function openThread(thread) {
@@ -86,17 +69,13 @@ async function openThread(thread) {
     messages.value = Array.isArray(data) ? data : []
     await nextTick()
     scrollToBottom()
-  } catch (e) {
-    console.error(e)
-  } finally {
-    msgsLoading.value = false
-  }
+  } catch (e) { console.error(e) }
+  finally { msgsLoading.value = false }
 }
 
 function scrollToBottom() {
-  if (msgsContainer.value) {
+  if (msgsContainer.value)
     msgsContainer.value.scrollTop = msgsContainer.value.scrollHeight
-  }
 }
 
 async function sendReply() {
@@ -104,24 +83,16 @@ async function sendReply() {
   replySending.value = true
   try {
     const { data } = await chatApi.reply(activeThread.value.id, replyText.value.trim())
-    messages.value = Array.isArray(data) ? data : messages.value
+    messages.value  = Array.isArray(data) ? data : messages.value
     replyText.value = ''
-    await nextTick()
-    scrollToBottom()
-    // Update thread list
+    await nextTick(); scrollToBottom()
     fetchThreads()
-  } catch (e) {
-    console.error(e)
-  } finally {
-    replySending.value = false
-  }
+  } catch (e) { console.error(e) }
+  finally { replySending.value = false }
 }
 
-function onReplyKeydown(e) {
-  if (e.key === 'Enter' && !e.shiftKey) {
-    e.preventDefault()
-    sendReply()
-  }
+function onReplyKey(e) {
+  if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); sendReply() }
 }
 
 function formatDate(iso) {
@@ -141,246 +112,228 @@ function formatTime(iso) {
   } catch { return '' }
 }
 
-// ── Init & polling ────────────────────────────────────────────────
-let pollInterval = null
+function initials(name) {
+  return (name || '?')[0].toUpperCase()
+}
 
+// ── Polling ───────────────────────────────────────────────────────
+let poll = null
 onMounted(() => {
   fetchUsers()
   fetchThreads()
-  pollInterval = setInterval(() => {
+  poll = setInterval(() => {
     if (tab.value === 'inbox') {
       fetchThreads()
       if (activeThread.value) openThread(activeThread.value)
     }
-  }, 8000)
+  }, 7000)
 })
-
-onUnmounted(() => clearInterval(pollInterval))
+onUnmounted(() => clearInterval(poll))
 </script>
 
 <template>
   <section>
     <!-- Stat cards -->
-    <VRow class="mb-4">
-      <VCol cols="12" sm="4">
-        <VCard>
-          <VCardText class="d-flex align-center gap-3">
-            <VAvatar color="primary" variant="tonal" size="42">
-              <VIcon icon="tabler-users" />
-            </VAvatar>
-            <div>
-              <div class="text-h5 font-weight-bold">{{ users.length }}</div>
-              <div class="text-caption">Jami foydalanuvchi</div>
+    <div class="d-flex gap-4 mb-5 flex-wrap">
+      <VCard style="flex:1;min-width:160px">
+        <VCardText class="d-flex align-center gap-3">
+          <VAvatar color="primary" variant="tonal" size="40">
+            <VIcon icon="tabler-users" size="20" />
+          </VAvatar>
+          <div>
+            <div class="text-h5 font-weight-black">{{ users.length }}</div>
+            <div class="text-caption text-medium-emphasis">Jami foydalanuvchi</div>
+          </div>
+        </VCardText>
+      </VCard>
+      <VCard style="flex:1;min-width:160px">
+        <VCardText class="d-flex align-center gap-3">
+          <VAvatar color="success" variant="tonal" size="40">
+            <VIcon icon="tabler-wifi" size="20" />
+          </VAvatar>
+          <div>
+            <div class="text-h5 font-weight-black">{{ onlineCount }}</div>
+            <div class="text-caption text-medium-emphasis">Online</div>
+          </div>
+        </VCardText>
+      </VCard>
+      <VCard style="flex:1;min-width:160px">
+        <VCardText class="d-flex align-center gap-3">
+          <VAvatar color="warning" variant="tonal" size="40">
+            <VIcon icon="tabler-message-exclamation" size="20" />
+          </VAvatar>
+          <div>
+            <div class="text-h5 font-weight-black">
+              {{ threads.filter(t => !t.hasOwnerReply).length }}
             </div>
-          </VCardText>
-        </VCard>
-      </VCol>
-      <VCol cols="12" sm="4">
-        <VCard>
-          <VCardText class="d-flex align-center gap-3">
-            <VAvatar color="success" variant="tonal" size="42">
-              <VIcon icon="tabler-message" />
-            </VAvatar>
-            <div>
-              <div class="text-h5 font-weight-bold">{{ threads.length }}</div>
-              <div class="text-caption">Faol suhbat</div>
-            </div>
-          </VCardText>
-        </VCard>
-      </VCol>
-      <VCol cols="12" sm="4">
-        <VCard>
-          <VCardText class="d-flex align-center gap-3">
-            <VAvatar color="warning" variant="tonal" size="42">
-              <VIcon icon="tabler-message-exclamation" />
-            </VAvatar>
-            <div>
-              <div class="text-h5 font-weight-bold">
-                {{ threads.filter(t => !t.hasOwnerReply).length }}
-              </div>
-              <div class="text-caption">Javob kutilmoqda</div>
-            </div>
-          </VCardText>
-        </VCard>
-      </VCol>
-    </VRow>
+            <div class="text-caption text-medium-emphasis">Javob kutilmoqda</div>
+          </div>
+        </VCardText>
+      </VCard>
+    </div>
 
     <!-- Tabs -->
     <VCard>
       <VTabs v-model="tab" color="primary">
         <VTab value="inbox">
-          <VIcon start icon="tabler-inbox" />
+          <VIcon start icon="tabler-inbox" size="18" />
           Xabarlar
           <VBadge
-            v-if="threads.filter(t => !t.hasOwnerReply).length"
-            :content="threads.filter(t => !t.hasOwnerReply).length"
-            color="warning"
-            class="ml-2"
+            v-if="threads.filter(t=>!t.hasOwnerReply).length"
+            :content="threads.filter(t=>!t.hasOwnerReply).length"
+            color="warning" class="ml-2"
           />
         </VTab>
         <VTab value="users">
-          <VIcon start icon="tabler-users" />
+          <VIcon start icon="tabler-users" size="18" />
           Foydalanuvchilar
         </VTab>
       </VTabs>
-
       <VDivider />
 
-      <!-- ── INBOX TAB ── -->
       <VTabsWindow v-model="tab">
+
+        <!-- ═══════════════ INBOX ═══════════════ -->
         <VTabsWindowItem value="inbox">
-          <div class="d-flex" style="min-height: 540px;">
+          <div class="chat-shell">
 
             <!-- Thread list -->
-            <div style="width:340px; border-right: 1px solid rgba(var(--v-border-color), var(--v-border-opacity)); overflow-y:auto; flex-shrink:0;">
-              <div class="pa-3 d-flex align-center justify-space-between">
-                <span class="text-subtitle-2 font-weight-bold">Suhbatlar</span>
-                <VBtn icon variant="text" size="small" @click="fetchThreads" :loading="threadsLoading">
-                  <VIcon icon="tabler-refresh" size="18" />
-                </VBtn>
-              </div>
-              <VDivider />
-
-              <div v-if="threadsLoading && threads.length === 0" class="pa-4">
-                <VSkeletonLoader type="list-item-avatar-three-line" v-for="i in 3" :key="i" />
+            <div class="chat-thread-col">
+              <div class="chat-thread-header">
+                <span class="chat-thread-header__title">Suhbatlar</span>
+                <button class="chat-icon-btn" @click="fetchThreads" :disabled="threadsLoading">
+                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round">
+                    <path d="M21 2v6h-6M3 12a9 9 0 0 1 15-6.7L21 8M3 22v-6h6M21 12a9 9 0 0 1-15 6.7L3 16"/>
+                  </svg>
+                </button>
               </div>
 
-              <div v-else-if="threads.length === 0" class="d-flex flex-column align-center pa-6 text-medium-emphasis">
-                <VIcon icon="tabler-message-off" size="40" class="mb-2" />
-                <span class="text-caption">Hali xabar yo'q</span>
+              <div v-if="threadsLoading && threads.length===0" class="chat-thread-empty">
+                <div class="chat-spinner" />
+              </div>
+              <div v-else-if="threads.length===0" class="chat-thread-empty">
+                <svg width="36" height="36" viewBox="0 0 24 24" fill="none" stroke="#cbd5e1" stroke-width="1.2">
+                  <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/>
+                </svg>
+                <span>Hali xabar yo'q</span>
               </div>
 
-              <VList v-else lines="two" density="compact" class="pa-0">
-                <VListItem
-                  v-for="thread in threads"
-                  :key="thread.id"
-                  :active="activeThread?.id === thread.id"
-                  active-color="primary"
+              <div v-else class="chat-thread-list">
+                <div
+                  v-for="thread in threads" :key="thread.id"
+                  class="chat-thread-item"
+                  :class="{ 'is-active': activeThread?.id === thread.id }"
                   @click="openThread(thread)"
-                  class="py-3 cursor-pointer"
                 >
-                  <template #prepend>
-                    <VAvatar color="primary" size="38">
-                      <span class="text-body-2 font-weight-bold">
-                        {{ (thread.user?.displayName || thread.visitorName || '?')[0].toUpperCase() }}
+                  <div class="chat-thread-avatar">
+                    {{ initials(thread.user?.displayName || thread.visitorName) }}
+                  </div>
+                  <div class="chat-thread-info">
+                    <div class="chat-thread-info__top">
+                      <span class="chat-thread-info__name">
+                        {{ thread.user?.displayName || thread.visitorName }}
                       </span>
-                    </VAvatar>
-                  </template>
-
-                  <VListItemTitle class="font-weight-semibold text-body-2">
-                    {{ thread.user?.displayName || thread.visitorName }}
-                    <VChip
-                      v-if="!thread.hasOwnerReply"
-                      size="x-small"
-                      color="warning"
-                      class="ml-1"
-                    >yangi</VChip>
-                  </VListItemTitle>
-                  <VListItemSubtitle class="text-caption">
-                    {{ thread.lastMessage }}
-                  </VListItemSubtitle>
-
-                  <template #append>
-                    <div class="text-caption text-medium-emphasis" style="white-space:nowrap">
-                      {{ formatTime(thread.updatedAt) }}
+                      <span class="chat-thread-info__time">{{ formatTime(thread.updatedAt) }}</span>
                     </div>
-                  </template>
-                </VListItem>
-              </VList>
+                    <div class="chat-thread-info__preview">
+                      {{ thread.lastMessage }}
+                    </div>
+                  </div>
+                  <span v-if="!thread.hasOwnerReply" class="chat-unread-dot" />
+                </div>
+              </div>
             </div>
 
-            <!-- Message view -->
-            <div class="flex-1 d-flex flex-column">
-              <!-- No thread selected -->
-              <div v-if="!activeThread" class="flex-1 d-flex flex-column align-center justify-center text-medium-emphasis gap-2">
-                <VIcon icon="tabler-message-circle" size="52" />
+            <!-- Chat window -->
+            <div class="chat-window">
+              <!-- Empty state -->
+              <div v-if="!activeThread" class="chat-window-empty">
+                <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="#cbd5e1" stroke-width="1">
+                  <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 0 2-2h14a2 2 0 0 1 2 2z"/>
+                </svg>
                 <span>Suhbatni tanlang</span>
               </div>
 
               <template v-else>
-                <!-- Thread header -->
-                <div class="pa-3 d-flex align-center gap-3 border-b">
-                  <VAvatar color="primary" size="36">
-                    <span class="font-weight-bold text-body-2">
-                      {{ (activeThread.user?.displayName || activeThread.visitorName || '?')[0].toUpperCase() }}
-                    </span>
-                  </VAvatar>
-                  <div>
-                    <div class="font-weight-semibold text-body-2">
-                      {{ activeThread.user?.displayName || activeThread.visitorName }}
-                    </div>
-                    <div class="text-caption text-medium-emphasis">
-                      @{{ activeThread.user?.username || '—' }}
-                    </div>
+                <!-- Window header -->
+                <div class="chat-window-header">
+                  <div class="chat-window-avatar">
+                    {{ initials(activeThread.user?.displayName || activeThread.visitorName) }}
                   </div>
+                  <div>
+                    <p class="chat-window-name">
+                      {{ activeThread.user?.displayName || activeThread.visitorName }}
+                    </p>
+                    <span class="chat-window-handle">
+                      @{{ activeThread.user?.username || '—' }}
+                    </span>
+                  </div>
+                  <span
+                    class="chat-presence-pill"
+                    :class="{ 'is-live': isOnline(activeThread.user || {}) }"
+                  >
+                    {{ isOnline(activeThread.user || {}) ? 'active now' : 'offline' }}
+                  </span>
                 </div>
 
                 <!-- Messages -->
-                <div ref="msgsContainer" class="flex-1 pa-4 overflow-y-auto" style="max-height:380px;">
-                  <div v-if="msgsLoading" class="d-flex justify-center pa-4">
-                    <VProgressCircular indeterminate color="primary" />
+                <div ref="msgsContainer" class="chat-messages">
+                  <div v-if="msgsLoading" class="chat-messages-loading">
+                    <div class="chat-spinner" />
                   </div>
-                  <div v-else-if="messages.length === 0" class="text-center text-medium-emphasis text-caption pa-4">
+                  <div v-else-if="!messages.filter(m=>!m.deletedAt).length" class="chat-messages-empty">
                     Hali xabar yo'q
                   </div>
-                  <div v-else class="d-flex flex-column gap-2">
+                  <template v-else>
                     <div
-                      v-for="msg in messages.filter(m => !m.deletedAt)"
-                      :key="msg.id"
-                      class="d-flex"
-                      :class="msg.sender === 'owner' ? 'justify-end' : 'justify-start'"
+                      v-for="msg in messages.filter(m=>!m.deletedAt)" :key="msg.id"
+                      class="chat-bubble-wrap"
+                      :class="msg.sender === 'owner' ? 'is-owner' : 'is-visitor'"
                     >
-                      <div
-                        class="px-3 py-2 rounded-lg"
-                        style="max-width:72%"
-                        :class="msg.sender === 'owner'
-                          ? 'bg-primary text-white'
-                          : 'bg-surface-variant'"
-                      >
-                        <div v-if="msg.sender !== 'owner'" class="text-caption font-weight-bold mb-1 opacity-70">
+                      <div class="chat-bubble">
+                        <p v-if="msg.sender !== 'owner'" class="chat-bubble__author">
                           {{ msg.author }}
-                        </div>
-                        <div class="text-body-2">{{ msg.text }}</div>
-                        <div class="text-right text-caption opacity-60 mt-1" style="font-size:10px">
-                          {{ formatTime(msg.createdAt) }}
+                        </p>
+                        <p class="chat-bubble__text">{{ msg.text }}</p>
+                        <div class="chat-bubble__footer">
+                          <span class="chat-bubble__time">{{ formatTime(msg.createdAt) }}</span>
+                          <span v-if="msg.sender==='owner' && msg.seenByVisitorAt" class="chat-bubble__seen">Seen</span>
+                          <span v-else-if="msg.sender==='owner'" class="chat-bubble__sent">Sent</span>
                         </div>
                       </div>
                     </div>
-                  </div>
+                  </template>
                 </div>
 
-                <!-- Reply composer -->
-                <div class="pa-3 border-t">
-                  <div class="d-flex gap-2 align-end">
-                    <VTextarea
+                <!-- Composer -->
+                <div class="chat-composer-wrap">
+                  <div class="chat-composer">
+                    <textarea
                       v-model="replyText"
-                      placeholder="Javob yozing... (Enter = yuborish, Shift+Enter = yangi qator)"
-                      rows="2"
-                      auto-grow
-                      max-rows="4"
-                      hide-details
-                      density="compact"
-                      variant="outlined"
-                      @keydown="onReplyKeydown"
-                      class="flex-1"
+                      class="chat-composer__input"
+                      placeholder="Javob yozing..."
+                      rows="1"
+                      @keydown="onReplyKey"
                     />
-                    <VBtn
-                      color="primary"
-                      icon
-                      :loading="replySending"
-                      :disabled="!replyText.trim()"
+                    <button
+                      class="chat-composer__send"
+                      :disabled="!replyText.trim() || replySending"
                       @click="sendReply"
                     >
-                      <VIcon icon="tabler-send" />
-                    </VBtn>
+                      <svg v-if="!replySending" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/>
+                      </svg>
+                      <div v-else class="chat-spinner chat-spinner--sm" />
+                    </button>
                   </div>
+                  <p class="chat-composer__hint">Enter — yuborish · Shift+Enter — yangi qator</p>
                 </div>
               </template>
             </div>
           </div>
         </VTabsWindowItem>
 
-        <!-- ── USERS TAB ── -->
+        <!-- ═══════════════ USERS ═══════════════ -->
         <VTabsWindowItem value="users">
           <VCardText class="d-flex justify-space-between align-center flex-wrap gap-3 pb-0">
             <div class="d-flex align-center gap-2">
@@ -392,53 +345,39 @@ onUnmounted(() => clearInterval(pollInterval))
               v-model="userSearch"
               prepend-inner-icon="tabler-search"
               placeholder="Ism yoki username..."
-              density="compact"
-              variant="outlined"
-              hide-details
-              style="max-width:240px"
-              clearable
+              density="compact" variant="outlined" hide-details
+              style="max-width:240px" clearable
             />
           </VCardText>
 
           <VDataTable
-            :items="filteredUsers"
-            :headers="userHeaders"
-            :loading="usersLoading"
-            items-per-page="20"
-            class="text-no-wrap"
+            :items="filteredUsers" :headers="userHeaders"
+            :loading="usersLoading" items-per-page="20" class="text-no-wrap"
           >
             <template #item.index="{ index }">
               <span class="text-medium-emphasis">{{ index + 1 }}</span>
             </template>
-
             <template #item.user="{ item }">
               <div class="d-flex align-center gap-3 py-2">
                 <VAvatar color="primary" size="36">
-                  <span class="text-body-2 font-weight-bold">
-                    {{ (item.raw.displayName || item.raw.username || '?')[0].toUpperCase() }}
-                  </span>
+                  <span class="text-body-2 font-weight-bold">{{ initials(item.raw.displayName || item.raw.username) }}</span>
                 </VAvatar>
                 <span class="font-weight-semibold">{{ item.raw.displayName || item.raw.username }}</span>
               </div>
             </template>
-
             <template #item.username="{ item }">
               <code class="text-caption">@{{ item.raw.username }}</code>
             </template>
-
             <template #item.status="{ item }">
               <VChip
                 :color="isOnline(item.raw) ? 'success' : 'secondary'"
-                size="small"
-                variant="tonal"
+                size="small" variant="tonal"
                 :prepend-icon="isOnline(item.raw) ? 'tabler-point-filled' : 'tabler-point'"
               >{{ isOnline(item.raw) ? 'Online' : 'Offline' }}</VChip>
             </template>
-
             <template #item.createdAt="{ item }">
               <span class="text-caption text-medium-emphasis">{{ formatDate(item.raw.createdAt) }}</span>
             </template>
-
             <template #no-data>
               <div class="d-flex flex-column align-center py-8 gap-2">
                 <VIcon icon="tabler-user-off" size="44" color="secondary" />
@@ -451,3 +390,303 @@ onUnmounted(() => clearInterval(pollInterval))
     </VCard>
   </section>
 </template>
+
+<style scoped>
+/* ── Layout ─────────────────────────────────────────────────────── */
+.chat-shell {
+  display: flex;
+  height: 600px;
+  overflow: hidden;
+}
+
+/* ── Thread column ──────────────────────────────────────────────── */
+.chat-thread-col {
+  width: 300px;
+  flex-shrink: 0;
+  border-right: 1.5px solid #e2e8f0;
+  display: flex;
+  flex-direction: column;
+  background: #fff;
+}
+
+.chat-thread-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: .75rem 1rem;
+  border-bottom: 1px solid #f1f5f9;
+  flex-shrink: 0;
+}
+
+.chat-thread-header__title {
+  font-size: .8rem;
+  font-weight: 700;
+  color: #64748b;
+  text-transform: uppercase;
+  letter-spacing: .08em;
+}
+
+.chat-icon-btn {
+  background: none;
+  border: 1.5px solid #e2e8f0;
+  border-radius: 8px;
+  width: 30px;
+  height: 30px;
+  display: grid;
+  place-items: center;
+  color: #64748b;
+  cursor: pointer;
+  transition: border-color .15s, color .15s;
+}
+.chat-icon-btn:hover { border-color: #16a34a; color: #15803d; }
+
+.chat-thread-list { flex: 1; overflow-y: auto; }
+
+.chat-thread-empty {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: .75rem;
+  color: #94a3b8;
+  font-size: .8rem;
+  padding: 2rem;
+}
+
+.chat-thread-item {
+  display: flex;
+  align-items: center;
+  gap: .75rem;
+  padding: .75rem 1rem;
+  cursor: pointer;
+  border-bottom: 1px solid #f8fafc;
+  transition: background .12s;
+  position: relative;
+}
+.chat-thread-item:hover { background: #f8fafc; }
+.chat-thread-item.is-active { background: #f0fdf4; border-left: 3px solid #16a34a; }
+
+.chat-thread-avatar {
+  width: 38px;
+  height: 38px;
+  border-radius: 999px;
+  background: #16a34a;
+  color: #fff;
+  font-size: .82rem;
+  font-weight: 700;
+  display: grid;
+  place-items: center;
+  flex-shrink: 0;
+}
+
+.chat-thread-info { flex: 1; min-width: 0; }
+.chat-thread-info__top { display: flex; align-items: baseline; justify-content: space-between; gap: .5rem; }
+.chat-thread-info__name { font-size: .82rem; font-weight: 700; color: #0f172a; truncate: true; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.chat-thread-info__time { font-size: .68rem; color: #94a3b8; flex-shrink: 0; }
+.chat-thread-info__preview { font-size: .75rem; color: #64748b; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; margin-top: .12rem; }
+
+.chat-unread-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 999px;
+  background: #f59e0b;
+  flex-shrink: 0;
+}
+
+/* ── Chat window ─────────────────────────────────────────────────── */
+.chat-window {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  background: #fff;
+  min-width: 0;
+}
+
+.chat-window-empty {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: .75rem;
+  color: #94a3b8;
+  font-size: .82rem;
+}
+
+/* Window header */
+.chat-window-header {
+  display: flex;
+  align-items: center;
+  gap: .75rem;
+  padding: .75rem 1.25rem;
+  border-bottom: 1.5px solid #e2e8f0;
+  flex-shrink: 0;
+}
+
+.chat-window-avatar {
+  width: 36px;
+  height: 36px;
+  border-radius: 999px;
+  background: #16a34a;
+  color: #fff;
+  font-size: .78rem;
+  font-weight: 700;
+  display: grid;
+  place-items: center;
+  flex-shrink: 0;
+}
+
+.chat-window-name { margin: 0; font-size: .88rem; font-weight: 700; color: #0f172a; }
+.chat-window-handle { font-size: .7rem; color: #94a3b8; }
+
+.chat-presence-pill {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 80px;
+  border: 1.5px solid #e2e8f0;
+  border-radius: 999px;
+  padding: .22rem .56rem;
+  color: #64748b;
+  background: #f8fafc;
+  font-size: .68rem;
+  font-weight: 700;
+  text-transform: lowercase;
+  margin-left: auto;
+}
+.chat-presence-pill.is-live {
+  color: #15803d;
+  border-color: rgba(22,163,74,.35);
+  background: #f0fdf4;
+}
+
+/* Messages */
+.chat-messages {
+  flex: 1;
+  overflow-y: auto;
+  padding: 1rem 1.25rem;
+  display: flex;
+  flex-direction: column;
+  gap: .56rem;
+  scroll-behavior: smooth;
+}
+
+.chat-messages-loading,
+.chat-messages-empty {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #94a3b8;
+  font-size: .8rem;
+  gap: .5rem;
+}
+
+.chat-bubble-wrap {
+  display: flex;
+  max-width: 72%;
+}
+.chat-bubble-wrap.is-visitor { align-self: flex-start; }
+.chat-bubble-wrap.is-owner   { align-self: flex-end; }
+
+.chat-bubble {
+  display: grid;
+  gap: .28rem;
+  padding: .58rem .76rem;
+  border-radius: 18px;
+}
+
+.is-visitor .chat-bubble {
+  background: #fff;
+  border: 1.5px solid #e2e8f0;
+  box-shadow: 0 1px 4px rgba(0,0,0,.05);
+}
+
+.is-owner .chat-bubble {
+  background: #f0fdf4;
+  border: 1.5px solid #bbf7d0;
+}
+
+.chat-bubble__author { margin: 0; font-size: .73rem; font-weight: 700; color: #15803d; }
+.chat-bubble__text   { margin: 0; font-size: .88rem; line-height: 1.56; color: #0f172a; white-space: pre-wrap; word-break: break-word; }
+.chat-bubble__footer { display: flex; align-items: center; justify-content: flex-end; gap: .38rem; }
+.chat-bubble__time   { font-size: .67rem; color: #94a3b8; }
+.chat-bubble__seen,
+.chat-bubble__sent   { font-size: .65rem; font-weight: 700; color: #94a3b8; }
+.chat-bubble__seen   { color: #16a34a; }
+
+/* Composer */
+.chat-composer-wrap {
+  flex-shrink: 0;
+  padding: .56rem 1rem;
+  border-top: 1.5px solid #e2e8f0;
+  background: #fff;
+}
+
+.chat-composer {
+  display: grid;
+  grid-template-columns: 1fr auto;
+  align-items: end;
+  gap: .5rem;
+  padding: .44rem .52rem;
+  border: 1.5px solid #e2e8f0;
+  border-radius: 24px;
+  background: #f8fafc;
+  transition: border-color .15s, background .15s;
+}
+.chat-composer:focus-within {
+  border-color: #16a34a;
+  background: #fff;
+}
+
+.chat-composer__input {
+  resize: none;
+  border: 0;
+  padding: .5rem 0;
+  background: transparent;
+  font-family: inherit;
+  font-size: .9rem;
+  line-height: 1.5;
+  color: #0f172a;
+  min-height: 40px;
+  max-height: 120px;
+  overflow-y: auto;
+}
+.chat-composer__input:focus { outline: none; }
+.chat-composer__input::placeholder { color: #94a3b8; }
+
+.chat-composer__send {
+  width: 40px;
+  height: 40px;
+  border-radius: 999px;
+  border: 0;
+  background: #16a34a;
+  color: #fff;
+  display: grid;
+  place-items: center;
+  cursor: pointer;
+  flex-shrink: 0;
+  transition: background .15s;
+}
+.chat-composer__send:hover:not(:disabled) { background: #15803d; }
+.chat-composer__send:disabled { opacity: .45; cursor: not-allowed; }
+
+.chat-composer__hint {
+  margin: .3rem 0 0;
+  font-size: .67rem;
+  color: #94a3b8;
+  text-align: right;
+}
+
+/* Spinner */
+.chat-spinner {
+  width: 28px; height: 28px;
+  border: 2.5px solid #e2e8f0;
+  border-top-color: #16a34a;
+  border-radius: 999px;
+  animation: spin .7s linear infinite;
+}
+.chat-spinner--sm { width: 18px; height: 18px; border-width: 2px; }
+@keyframes spin { to { transform: rotate(360deg); } }
+</style>
