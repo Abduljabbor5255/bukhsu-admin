@@ -208,43 +208,17 @@ onUnmounted(() => clearInterval(poll))
 
 <template>
   <section>
-    <!-- Stat cards -->
-    <div class="d-flex gap-4 mb-5 flex-wrap">
-      <VCard style="flex:1;min-width:160px">
-        <VCardText class="d-flex align-center gap-3">
-          <VAvatar color="primary" variant="tonal" size="40">
-            <VIcon icon="tabler-users" size="20" />
-          </VAvatar>
-          <div>
-            <div class="text-h5 font-weight-black">{{ users.length }}</div>
-            <div class="text-caption text-medium-emphasis">Jami foydalanuvchi</div>
-          </div>
-        </VCardText>
-      </VCard>
-      <VCard style="flex:1;min-width:160px">
-        <VCardText class="d-flex align-center gap-3">
-          <VAvatar color="success" variant="tonal" size="40">
-            <VIcon icon="tabler-wifi" size="20" />
-          </VAvatar>
-          <div>
-            <div class="text-h5 font-weight-black">{{ onlineCount }}</div>
-            <div class="text-caption text-medium-emphasis">Online</div>
-          </div>
-        </VCardText>
-      </VCard>
-      <VCard style="flex:1;min-width:160px">
-        <VCardText class="d-flex align-center gap-3">
-          <VAvatar color="warning" variant="tonal" size="40">
-            <VIcon icon="tabler-message-exclamation" size="20" />
-          </VAvatar>
-          <div>
-            <div class="text-h5 font-weight-black">
-              {{ threads.filter(t => !t.hasOwnerReply).length }}
-            </div>
-            <div class="text-caption text-medium-emphasis">Javob kutilmoqda</div>
-          </div>
-        </VCardText>
-      </VCard>
+    <!-- Stat chips (compact) -->
+    <div class="d-flex gap-3 mb-4 flex-wrap">
+      <VChip prepend-icon="tabler-users" color="primary" variant="tonal" size="default">
+        {{ users.length }} foydalanuvchi
+      </VChip>
+      <VChip prepend-icon="tabler-wifi" color="success" variant="tonal" size="default">
+        {{ onlineCount }} online
+      </VChip>
+      <VChip prepend-icon="tabler-message-exclamation" color="warning" variant="tonal" size="default">
+        {{ threads.filter(t => !t.hasOwnerReply).length }} javob kutilmoqda
+      </VChip>
     </div>
 
     <!-- Tabs -->
@@ -413,7 +387,7 @@ onUnmounted(() => clearInterval(poll))
 
         <!-- ═══════════════ USERS ═══════════════ -->
         <VTabsWindowItem value="users">
-          <VCardText class="d-flex justify-space-between align-center flex-wrap gap-3 pb-0">
+          <div class="d-flex justify-space-between align-center flex-wrap gap-3 pa-4 pb-2">
             <div class="d-flex align-center gap-2">
               <span class="text-subtitle-1 font-weight-bold">Ro'yxatdan o'tganlar</span>
               <VChip size="small" color="primary" variant="tonal">{{ users.length }}</VChip>
@@ -426,7 +400,7 @@ onUnmounted(() => clearInterval(poll))
               density="compact" variant="outlined" hide-details
               style="max-width:240px" clearable
             />
-          </VCardText>
+          </div>
 
           <VDataTable
             :items="filteredUsers" :headers="userHeaders"
@@ -473,7 +447,10 @@ onUnmounted(() => clearInterval(poll))
 /* ── Layout ─────────────────────────────────────────────────────── */
 .chat-shell {
   display: flex;
-  height: 600px;
+  /* Fill remaining viewport: subtract topbar + stat cards + tabs + paddings */
+  height: calc(100dvh - 300px);
+  min-height: 400px;
+  max-height: 700px;
   overflow: hidden;
 }
 
