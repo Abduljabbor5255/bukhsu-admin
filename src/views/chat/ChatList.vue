@@ -9,19 +9,21 @@ const users        = ref([])
 const usersLoading = ref(false)
 const userSearch   = ref('')
 
-const userHeaders = [
-  { title: '#',                   key: 'index',     sortable: false, width: 52 },
-  { title: 'Foydalanuvchi',       key: 'user',      sortable: false },
-  { title: 'Username',            key: 'username',  sortable: true },
-  { title: 'Holat',               key: 'status',    sortable: false, width: 120 },
-  { title: "Ro'yxatdan o'tgan",   key: 'createdAt', sortable: true },
-]
 
 function isOnline(u) {
   return !!(u?.sessionToken && u?.sessionExpiresAt && new Date(u.sessionExpiresAt) > new Date())
 }
 
 const onlineCount = computed(() => users.value.filter(isOnline).length)
+
+const filteredUsers = computed(() => {
+  const q = userSearch.value.trim().toLowerCase()
+  if (!q) return users.value
+  return users.value.filter(u =>
+    (u.displayName || '').toLowerCase().includes(q) ||
+    (u.username   || '').toLowerCase().includes(q)
+  )
+})
 
 async function fetchUsers() {
   usersLoading.value = true
@@ -374,61 +376,87 @@ onUnmounted(() => clearInterval(poll))
         </div>
 
         <!-- ═══════════════ USERS ═══════════════ -->
-        <div v-show="tab === 'users'">
-          <div class="d-flex justify-space-between align-center flex-wrap gap-3 pa-4 pb-2">
+        <div v-show="tab === 'users'" class="pa-4">
+
+          <!-- Search + counters -->
+          <div class="d-flex justify-space-between align-center flex-wrap gap-3 mb-3">
             <div class="d-flex align-center gap-2">
-              <span class="text-subtitle-1 font-weight-bold">Ro'yxatdan o'tganlar</span>
-              <VChip size="small" color="primary" variant="tonal">{{ users.length }}</VChip>
-              <VChip size="small" color="success" variant="tonal">{{ onlineCount }} online</VChip>
+              <span class="text-subtitle-2 font-weight-bold">Ro'yxatdan o'tganlar</span>
+              <VChip size="x-small" color="primary" variant="tonal">{{ users.length }}</VChip>
+              <VChip size="x-small" color="success" variant="tonal">{{ onlineCount }} online</VChip>
             </div>
-            <VTextField
-              v-model="userSearch"
-              prepend-inner-icon="tabler-search"
-              placeholder="Ism yoki username..."
-              density="compact" variant="outlined" hide-details
-              style="max-width:240px" clearable
-            />
+            <div class="users-search-wrap">
+              <svg width="15" height="15" viewBox="0 0 24 24" fill="none"
+                stroke="currentColor" stroke-width="2" stroke-linecap="round"
+                class="users-search-icon">
+                <circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/>
+              </svg>
+              <input
+                v-model="userSearch"
+                type="search"
+                placeholder="Ism yoki username..."
+                class="users-search-input"
+              />
+            </div>
           </div>
 
-          <VDataTable
-            :items="users"
-            :search="userSearch"
-            :headers="userHeaders"
-            :loading="usersLoading"
-            items-per-page="20"
-            class="text-no-wrap"
-          >
-            <template #item.index="{ index }">
-              <span class="text-medium-emphasis">{{ index + 1 }}</span>
-            </template>
-            <template #item.user="{ item }">
-              <div class="d-flex align-center gap-3 py-2">
-                <VAvatar color="primary" size="36">
-                  <span class="text-body-2 font-weight-bold">{{ initials(item.raw.displayName || item.raw.username) }}</span>
-                </VAvatar>
-                <span class="font-weight-semibold">{{ item.raw.displayName || item.raw.username }}</span>
-              </div>
-            </template>
-            <template #item.username="{ item }">
-              <code class="text-caption">@{{ item.raw.username }}</code>
-            </template>
-            <template #item.status="{ item }">
-              <VChip
-                :color="isOnline(item.raw) ? 'success' : 'secondary'"
-                size="small" variant="tonal"
-                :prepend-icon="isOnline(item.raw) ? 'tabler-point-filled' : 'tabler-point'"
-              >{{ isOnline(item.raw) ? 'Online' : 'Offline' }}</VChip>
-            </template>
-            <template #item.createdAt="{ item }">
-              <span class="text-caption text-medium-emphasis">{{ formatDate(item.raw.createdAt) }}</span>
-            </template>
-            <template #no-data>
-              <div class="d-flex flex-column align-center py-8 gap-2">
-                <VIcon icon="tabler-user-off" size="44" color="secondary" />
-                <span class="text-body-2 text-medium-emphasis">Foydalanuvchi yo'q</span>
-              </div>
-            </template>
-          </VDataTable>
+          <!-- Loading -->
+          <div v-if="usersLoading" class="d-flex justify-center py-8">
+            <VProgressCircular indeterminate color="primary" size="32" />
+          </div>
+
+          <!-- Empty -->
+          <div v-else-if="filteredUsers.length === 0"
+            class="d-flex flex-column align-center py-10 gap-2 text-medium-emphasis">
+            <VIcon icon="tabler-user-off" size="44" />
+            <span class="text-body-2">
+              {{ userSearch ? 'Hech narsa topilmadi' : "Foydalanuvchi yo'q" }}
+            </span>
+          </div>
+
+          <!-- Table -->
+          <div v-else class="users-table-wrap">
+            <table class="users-table">
+              <thead>
+                <tr>
+                  <th style="width:48px">#</th>
+                  <th>Foydalanuvchi</th>
+                  <th>Username</th>
+                  <th style="width:110px">Holat</th>
+                  <th>Ro'yxatdan o'tgan</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr v-for="(u, i) in filteredUsers" :key="u.id">
+                  <td class="users-table__num">{{ i + 1 }}</td>
+                  <td>
+                    <div class="d-flex align-center gap-3">
+                      <VAvatar color="primary" size="34">
+                        <span style="font-size:.78rem;font-weight:700">
+                          {{ initials(u.displayName || u.username) }}
+                        </span>
+                      </VAvatar>
+                      <span class="font-weight-semibold" style="font-size:.9rem">
+                        {{ u.displayName || u.username }}
+                      </span>
+                    </div>
+                  </td>
+                  <td><code style="font-size:.82rem">@{{ u.username }}</code></td>
+                  <td>
+                    <VChip
+                      :color="isOnline(u) ? 'success' : 'secondary'"
+                      size="small" variant="tonal"
+                    >
+                      <span class="users-online-dot"
+                        :style="{ background: isOnline(u) ? '#22c55e' : '#94a3b8' }" />
+                      {{ isOnline(u) ? 'Online' : 'Offline' }}
+                    </VChip>
+                  </td>
+                  <td class="users-table__date">{{ formatDate(u.createdAt) }}</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
         </div>
     </VCard>
   </section>
@@ -730,6 +758,76 @@ onUnmounted(() => clearInterval(poll))
   font-size: .67rem;
   color: #ef4444;
   text-align: right;
+}
+
+/* Users search */
+.users-search-wrap {
+  position: relative;
+  display: flex;
+  align-items: center;
+}
+.users-search-icon {
+  position: absolute;
+  left: 10px;
+  color: #94a3b8;
+  pointer-events: none;
+  flex-shrink: 0;
+}
+.users-search-input {
+  padding: .5rem .75rem .5rem 2rem;
+  border: 1.5px solid #e2e8f0;
+  border-radius: 10px;
+  font-family: inherit;
+  font-size: .84rem;
+  color: #0f172a;
+  background: #f8fafc;
+  width: 220px;
+  outline: none;
+  transition: border-color .15s, background .15s;
+}
+.users-search-input:focus { border-color: #16a34a; background: #fff; }
+.users-search-input::placeholder { color: #94a3b8; }
+
+/* Users table */
+.users-table-wrap {
+  border: 1.5px solid #e2e8f0;
+  border-radius: 12px;
+  overflow: hidden;
+}
+.users-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: .875rem;
+}
+.users-table thead tr {
+  background: #f8fafc;
+  border-bottom: 1.5px solid #e2e8f0;
+}
+.users-table th {
+  padding: .65rem 1rem;
+  text-align: left;
+  font-size: .72rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: .06em;
+  color: #64748b;
+}
+.users-table td {
+  padding: .75rem 1rem;
+  border-bottom: 1px solid #f1f5f9;
+  vertical-align: middle;
+}
+.users-table tbody tr:last-child td { border-bottom: none; }
+.users-table tbody tr:hover { background: #f8fafc; }
+.users-table__num { color: #94a3b8; font-size: .82rem; }
+.users-table__date { color: #64748b; font-size: .78rem; white-space: nowrap; }
+.users-online-dot {
+  display: inline-block;
+  width: 7px;
+  height: 7px;
+  border-radius: 999px;
+  margin-right: 5px;
+  flex-shrink: 0;
 }
 
 /* Tab unread count */
