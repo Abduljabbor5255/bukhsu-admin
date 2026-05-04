@@ -18,7 +18,7 @@ const userHeaders = [
 ]
 
 function isOnline(u) {
-  return u.sessionToken && u.sessionExpiresAt && new Date(u.sessionExpiresAt) > new Date()
+  return !!(u?.sessionToken && u?.sessionExpiresAt && new Date(u.sessionExpiresAt) > new Date())
 }
 
 const filteredUsers = computed(() => {
@@ -37,7 +37,7 @@ async function fetchUsers() {
   try {
     const { data } = await chatApi.getUsers()
     users.value = Array.isArray(data) ? data : []
-  } catch (e) { console.error(e) }
+  } catch { /* silent */ }
   finally { usersLoading.value = false }
 }
 
@@ -49,28 +49,68 @@ const messages       = ref([])
 const msgsLoading    = ref(false)
 const replyText      = ref('')
 const replySending   = ref(false)
+const sendError      = ref('')
 const msgsContainer  = ref(null)
+const textareaRef    = ref(null)
+
+// Track which threads the admin has already opened (mark as read locally)
+const readThreadIds = ref(new Set())
+
+// Threads sorted by most recent first
+const sortedThreads = computed(() =>
+  [...threads.value].sort((a, b) =>
+    new Date(b.updatedAt || 0) - new Date(a.updatedAt || 0)
+  )
+)
+
+const unreadCount = computed(() =>
+  threads.value.filter(t => !t.hasOwnerReply && !readThreadIds.value.has(t.id)).length
+)
 
 async function fetchThreads() {
   threadsLoading.value = true
   try {
     const { data } = await chatApi.getThreads()
     threads.value = Array.isArray(data) ? data : []
-  } catch (e) { console.error(e) }
+  } catch { /* silent */ }
   finally { threadsLoading.value = false }
 }
 
+// Open thread — full load with loading indicator, scroll to bottom
 async function openThread(thread) {
   activeThread.value = thread
-  messages.value     = []
-  msgsLoading.value  = true
+  readThreadIds.value.add(thread.id)   // mark as read locally
+  messages.value    = []
+  msgsLoading.value = true
+  sendError.value   = ''
   try {
     const { data } = await chatApi.getMessages(thread.id)
     messages.value = Array.isArray(data) ? data : []
     await nextTick()
     scrollToBottom()
-  } catch (e) { console.error(e) }
+  } catch { /* silent */ }
   finally { msgsLoading.value = false }
+}
+
+// Silent refresh — only updates messages without resetting state or scroll
+async function silentRefreshMessages() {
+  if (!activeThread.value) return
+  try {
+    const { data } = await chatApi.getMessages(activeThread.value.id)
+    const fresh = Array.isArray(data) ? data : []
+    // Only update if new messages arrived to avoid unnecessary re-renders
+    if (fresh.length !== messages.value.length) {
+      const wasAtBottom = isNearBottom()
+      messages.value = fresh
+      if (wasAtBottom) { await nextTick(); scrollToBottom() }
+    }
+  } catch { /* silent poll failure */ }
+}
+
+function isNearBottom() {
+  if (!msgsContainer.value) return true
+  const { scrollTop, scrollHeight, clientHeight } = msgsContainer.value
+  return scrollHeight - scrollTop - clientHeight < 80
 }
 
 function scrollToBottom() {
@@ -79,20 +119,56 @@ function scrollToBottom() {
 }
 
 async function sendReply() {
-  if (!replyText.value.trim() || !activeThread.value) return
+  const text = replyText.value.trim()
+  if (!text || !activeThread.value || replySending.value) return
+
   replySending.value = true
+  sendError.value    = ''
+
+  // Optimistic: clear input immediately
+  replyText.value = ''
+  resetTextarea()
+
   try {
-    const { data } = await chatApi.reply(activeThread.value.id, replyText.value.trim())
-    messages.value  = Array.isArray(data) ? data : messages.value
-    replyText.value = ''
+    const { data } = await chatApi.reply(activeThread.value.id, text)
+    messages.value = Array.isArray(data) ? data : messages.value
+
+    // Update thread list: mark as replied + bump updatedAt
+    const idx = threads.value.findIndex(t => t.id === activeThread.value.id)
+    if (idx !== -1) {
+      threads.value[idx] = {
+        ...threads.value[idx],
+        hasOwnerReply: true,
+        updatedAt: new Date().toISOString(),
+        lastMessage: text,
+      }
+    }
+
     await nextTick(); scrollToBottom()
-    fetchThreads()
-  } catch (e) { console.error(e) }
-  finally { replySending.value = false }
+  } catch {
+    sendError.value = "Xabar yuborilmadi. Qayta urinib ko'ring."
+    // Restore text so user doesn't lose it
+    replyText.value = text
+  } finally {
+    replySending.value = false
+  }
 }
 
 function onReplyKey(e) {
   if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); sendReply() }
+}
+
+// Auto-resize textarea as user types
+function autoResize() {
+  const el = textareaRef.value
+  if (!el) return
+  el.style.height = 'auto'
+  el.style.height = Math.min(el.scrollHeight, 120) + 'px'
+}
+
+function resetTextarea() {
+  const el = textareaRef.value
+  if (el) el.style.height = 'auto'
 }
 
 function formatDate(iso) {
@@ -121,11 +197,10 @@ let poll = null
 onMounted(() => {
   fetchUsers()
   fetchThreads()
-  poll = setInterval(() => {
-    if (tab.value === 'inbox') {
-      fetchThreads()
-      if (activeThread.value) openThread(activeThread.value)
-    }
+  poll = setInterval(async () => {
+    if (tab.value !== 'inbox') return
+    await fetchThreads()                // refresh thread list silently
+    await silentRefreshMessages()       // refresh messages without flicker
   }, 7000)
 })
 onUnmounted(() => clearInterval(poll))
@@ -179,8 +254,8 @@ onUnmounted(() => clearInterval(poll))
           <VIcon start icon="tabler-inbox" size="18" />
           Xabarlar
           <VBadge
-            v-if="threads.filter(t=>!t.hasOwnerReply).length"
-            :content="threads.filter(t=>!t.hasOwnerReply).length"
+            v-if="unreadCount"
+            :content="unreadCount"
             color="warning" class="ml-2"
           />
         </VTab>
@@ -220,7 +295,7 @@ onUnmounted(() => clearInterval(poll))
 
               <div v-else class="chat-thread-list">
                 <div
-                  v-for="thread in threads" :key="thread.id"
+                  v-for="thread in sortedThreads" :key="thread.id"
                   class="chat-thread-item"
                   :class="{ 'is-active': activeThread?.id === thread.id }"
                   @click="openThread(thread)"
@@ -239,7 +314,7 @@ onUnmounted(() => clearInterval(poll))
                       {{ thread.lastMessage }}
                     </div>
                   </div>
-                  <span v-if="!thread.hasOwnerReply" class="chat-unread-dot" />
+                  <span v-if="!thread.hasOwnerReply && !readThreadIds.has(thread.id)" class="chat-unread-dot" />
                 </div>
               </div>
             </div>
@@ -309,11 +384,13 @@ onUnmounted(() => clearInterval(poll))
                 <div class="chat-composer-wrap">
                   <div class="chat-composer">
                     <textarea
+                      ref="textareaRef"
                       v-model="replyText"
                       class="chat-composer__input"
                       placeholder="Javob yozing..."
                       rows="1"
                       @keydown="onReplyKey"
+                      @input="autoResize"
                     />
                     <button
                       class="chat-composer__send"
@@ -326,7 +403,8 @@ onUnmounted(() => clearInterval(poll))
                       <div v-else class="chat-spinner chat-spinner--sm" />
                     </button>
                   </div>
-                  <p class="chat-composer__hint">Enter — yuborish · Shift+Enter — yangi qator</p>
+                  <p v-if="sendError" class="chat-composer__error">{{ sendError }}</p>
+                  <p v-else class="chat-composer__hint">Enter — yuborish · Shift+Enter — yangi qator</p>
                 </div>
               </template>
             </div>
@@ -676,6 +754,13 @@ onUnmounted(() => clearInterval(poll))
   margin: .3rem 0 0;
   font-size: .67rem;
   color: #94a3b8;
+  text-align: right;
+}
+
+.chat-composer__error {
+  margin: .3rem 0 0;
+  font-size: .67rem;
+  color: #ef4444;
   text-align: right;
 }
 
