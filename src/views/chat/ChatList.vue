@@ -21,15 +21,6 @@ function isOnline(u) {
   return !!(u?.sessionToken && u?.sessionExpiresAt && new Date(u.sessionExpiresAt) > new Date())
 }
 
-const filteredUsers = computed(() => {
-  const q = userSearch.value.trim().toLowerCase()
-  if (!q) return users.value
-  return users.value.filter(u =>
-    u.displayName?.toLowerCase().includes(q) ||
-    u.username?.toLowerCase().includes(q)
-  )
-})
-
 const onlineCount = computed(() => users.value.filter(isOnline).length)
 
 async function fetchUsers() {
@@ -228,11 +219,7 @@ onUnmounted(() => clearInterval(poll))
         <VTab value="inbox">
           <VIcon start icon="tabler-inbox" size="18" />
           Xabarlar
-          <VBadge
-            v-if="unreadCount"
-            :content="unreadCount"
-            color="warning" class="ml-2"
-          />
+          <span v-if="unreadCount" class="tab-count">{{ unreadCount }}</span>
         </VTab>
         <VTab value="users">
           <VIcon start icon="tabler-users" size="18" />
@@ -404,8 +391,12 @@ onUnmounted(() => clearInterval(poll))
           </div>
 
           <VDataTable
-            :items="filteredUsers" :headers="userHeaders"
-            :loading="usersLoading" items-per-page="20" class="text-no-wrap"
+            :items="users"
+            :search="userSearch"
+            :headers="userHeaders"
+            :loading="usersLoading"
+            items-per-page="20"
+            class="text-no-wrap"
           >
             <template #item.index="{ index }">
               <span class="text-medium-emphasis">{{ index + 1 }}</span>
@@ -739,6 +730,23 @@ onUnmounted(() => clearInterval(poll))
   font-size: .67rem;
   color: #ef4444;
   text-align: right;
+}
+
+/* Tab unread count */
+.tab-count {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 18px;
+  height: 18px;
+  border-radius: 999px;
+  background: #f59e0b;
+  color: #fff;
+  font-size: 11px;
+  font-weight: 700;
+  padding: 0 5px;
+  margin-left: 6px;
+  line-height: 1;
 }
 
 /* Spinner */
