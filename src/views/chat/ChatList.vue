@@ -4,6 +4,12 @@ import { nextTick, onMounted, onUnmounted, ref, computed } from 'vue'
 
 const tab = ref('inbox')
 
+// ── Responsive: track window width ───────────────────────────────
+const windowWidth = ref(typeof window !== 'undefined' ? window.innerWidth : 1024)
+const isMobile    = computed(() => windowWidth.value < 640)
+
+function onResize() { windowWidth.value = window.innerWidth }
+
 // ── Users ─────────────────────────────────────────────────────────
 const users        = ref([])
 const usersLoading = ref(false)
@@ -68,6 +74,8 @@ async function fetchThreads() {
   } catch { /* silent */ }
   finally { threadsLoading.value = false }
 }
+
+function goBackToList() { activeThread.value = null }
 
 // Open thread — full load with loading indicator, scroll to bottom
 async function openThread(thread) {
@@ -186,18 +194,22 @@ function initials(name) {
   return (name || '?')[0].toUpperCase()
 }
 
-// ── Polling ───────────────────────────────────────────────────────
+// ── Polling + resize ──────────────────────────────────────────────
 let poll = null
 onMounted(() => {
   fetchUsers()
   fetchThreads()
+  window.addEventListener('resize', onResize)
   poll = setInterval(async () => {
     if (tab.value !== 'inbox') return
-    await fetchThreads()                // refresh thread list silently
-    await silentRefreshMessages()       // refresh messages without flicker
+    await fetchThreads()
+    await silentRefreshMessages()
   }, 7000)
 })
-onUnmounted(() => clearInterval(poll))
+onUnmounted(() => {
+  clearInterval(poll)
+  window.removeEventListener('resize', onResize)
+})
 </script>
 
 <template>
@@ -241,8 +253,9 @@ onUnmounted(() => clearInterval(poll))
       <div v-show="tab === 'inbox'" class="chat-body-inner">
           <div class="chat-shell">
 
-            <!-- Thread list -->
-            <div class="chat-thread-col">
+            <!-- Thread list: hidden on mobile when chat is open -->
+            <div class="chat-thread-col"
+                 :class="{ 'is-hidden-mobile': isMobile && activeThread }">
               <div class="chat-thread-header">
                 <span class="chat-thread-header__title">Suhbatlar</span>
                 <button class="chat-icon-btn" @click="fetchThreads" :disabled="threadsLoading">
@@ -288,8 +301,9 @@ onUnmounted(() => clearInterval(poll))
               </div>
             </div>
 
-            <!-- Chat window -->
-            <div class="chat-window">
+            <!-- Chat window: full-width on mobile when thread selected -->
+            <div class="chat-window"
+                 :class="{ 'is-mobile-full': isMobile && activeThread }">
               <!-- Empty state -->
               <div v-if="!activeThread" class="chat-window-empty">
                 <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="#cbd5e1" stroke-width="1">
@@ -301,6 +315,13 @@ onUnmounted(() => clearInterval(poll))
               <template v-else>
                 <!-- Window header -->
                 <div class="chat-window-header">
+                  <!-- Back button (mobile only) -->
+                  <button v-if="isMobile" class="chat-back-btn" @click="goBackToList">
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none"
+                      stroke="currentColor" stroke-width="2.5" stroke-linecap="round">
+                      <polyline points="15,18 9,12 15,6"/>
+                    </svg>
+                  </button>
                   <div class="chat-window-avatar">
                     {{ initials(activeThread.user?.displayName || activeThread.visitorName) }}
                   </div>
@@ -915,20 +936,50 @@ onUnmounted(() => clearInterval(poll))
   line-height: 1;
 }
 
-/* Responsive: narrow screens */
-@media (max-width: 700px) {
-  .chat-thread-col {
-    width: 220px;
-  }
+/* Back button (mobile) */
+.chat-back-btn {
+  background: none;
+  border: none;
+  cursor: pointer;
+  color: #64748b;
+  display: flex;
+  align-items: center;
+  padding: .25rem;
+  margin-right: .25rem;
+  border-radius: 8px;
+  transition: color .15s, background .15s;
+  flex-shrink: 0;
+}
+.chat-back-btn:hover { color: #16a34a; background: #f0fdf4; }
+
+/* Mobile: hide/show panels */
+@media (max-width: 639px) {
   .chat-header-stats { display: none; }
-  .chat-window-header { padding: .6rem .8rem; }
-  .chat-messages { padding: .75rem .9rem; }
+
+  .chat-thread-col {
+    width: 100% !important;
+    border-right: none;
+    flex-shrink: 0;
+  }
+
+  /* When a thread is selected — hide list, show window full-width */
+  .chat-thread-col.is-hidden-mobile { display: none; }
+
+  .chat-window { display: none; }
+  .chat-window.is-mobile-full {
+    display: flex;
+    width: 100%;
+  }
+
+  .chat-window-header { padding: .6rem .9rem; }
+  .chat-messages { padding: .75rem 1rem; }
   .chat-composer-wrap { padding: .5rem .75rem; }
 }
-@media (max-width: 520px) {
-  .chat-thread-col { width: 180px; }
-  .chat-thread-info__name { font-size: .76rem; }
-  .chat-thread-avatar { width: 32px; height: 32px; font-size: .74rem; }
+
+/* Tablet: slightly narrower thread col */
+@media (min-width: 640px) and (max-width: 900px) {
+  .chat-thread-col { width: 220px; }
+  .chat-header-stats { display: none; }
 }
 
 /* Spinner */
