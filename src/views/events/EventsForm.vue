@@ -1,6 +1,7 @@
 <script setup>
 import AppHtmlEditor from '@/components/editor/AppHtmlEditor.vue'
 import FormUpload from '@/components/form/FormUpload.vue'
+import LangTabs from '@/components/LangTabs.vue'
 import { eventsApi } from '@/services/events/events.service'
 import { computed, onMounted, reactive, ref } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
@@ -11,26 +12,27 @@ const router = useRouter()
 const isEdit      = computed(() => !!route.params.id)
 const pageLoading = ref(false)
 const btnLoading  = ref(false)
+const lang        = ref('uz')
 const snackbar    = reactive({ show: false, text: '', color: 'success' })
 
 const form = reactive({
-  title:       '',
-  date:        '',
-  publishDate: '',
-  image:       null,
-  description: '',
-  location:    '',
-  apply_url:   '',
-  speaker:     [],
+  title: '', title_ru: '', title_en: '',
+  description: '', description_ru: '', description_en: '',
+  date: '', publishDate: '', image: null,
+  location: '', apply_url: '', speaker: [],
 })
 
-function addSpeaker()    { form.speaker.push({ name: '', image: null, designation: '' }) }
-function removeSpeaker(i){ form.speaker.splice(i, 1) }
+const F = computed(() => ({
+  title:       lang.value === 'uz' ? 'title'       : `title_${lang.value}`,
+  description: lang.value === 'uz' ? 'description' : `description_${lang.value}`,
+}))
+
+function addSpeaker()     { form.speaker.push({ name: '', image: null, designation: '' }) }
+function removeSpeaker(i) { form.speaker.splice(i, 1) }
 
 const errors = reactive({ title: '' })
-
 function validate() {
-  errors.title = form.title.trim() ? '' : 'Majburiy maydon'
+  errors.title = form.title.trim() ? '' : 'UZ sarlavha majburiy'
   return !errors.title
 }
 
@@ -38,24 +40,19 @@ async function fetchItem(id) {
   pageLoading.value = true
   try {
     const { data } = await eventsApi.findOne({ params: { id } })
-    const r = data.result
+    const r = data.result ?? data
     Object.assign(form, {
-      title:       r.title       || '',
-      date:        r.date        ? r.date.slice(0, 10)        : '',
+      title: r.title || '', title_ru: r.title_ru || '', title_en: r.title_en || '',
+      description: r.description || '', description_ru: r.description_ru || '', description_en: r.description_en || '',
+      date: r.date ? r.date.slice(0, 10) : '',
       publishDate: r.publishDate ? r.publishDate.slice(0, 10) : '',
-      image:       r.image       || null,
-      description: r.description || '',
-      location:    r.location    || '',
-      apply_url:   r.apply_url   || '',
-      speaker:     Array.isArray(r.speaker)
+      image: r.image || null, location: r.location || '', apply_url: r.apply_url || '',
+      speaker: Array.isArray(r.speaker)
         ? r.speaker.map(s => ({ name: s.name || '', image: s.image || null, designation: s.designation || '' }))
         : [],
     })
-  } catch (e) {
-    console.error(e)
-  } finally {
-    pageLoading.value = false
-  }
+  } catch (e) { console.error(e) }
+  finally { pageLoading.value = false }
 }
 
 async function submit() {
@@ -70,22 +67,15 @@ async function submit() {
       await eventsApi.create({ params: payload })
       snackbar.text = 'Tadbir yaratildi'
     }
-    snackbar.color = 'success'
-    snackbar.show  = true
+    snackbar.color = 'success'; snackbar.show = true
     setTimeout(() => router.push({ name: 'events' }), 800)
   } catch (e) {
     console.error(e)
-    snackbar.text  = 'Xatolik yuz berdi'
-    snackbar.color = 'error'
-    snackbar.show  = true
-  } finally {
-    btnLoading.value = false
-  }
+    snackbar.text = 'Xatolik yuz berdi'; snackbar.color = 'error'; snackbar.show = true
+  } finally { btnLoading.value = false }
 }
 
-onMounted(() => {
-  if (isEdit.value) fetchItem(route.params.id)
-})
+onMounted(() => { if (isEdit.value) fetchItem(route.params.id) })
 </script>
 
 <template>
@@ -107,13 +97,11 @@ onMounted(() => {
               </p>
             </div>
           </div>
-          <div class="d-flex gap-2 align-center">
-            <VBtn variant="text" color="secondary" size="small" :to="{ name: 'events' }">
-              Bekor qilish
-            </VBtn>
-            <VBtn color="primary" prepend-icon="tabler-device-floppy" :loading="btnLoading" @click="submit">
-              Saqlash
-            </VBtn>
+          <div class="d-flex gap-3 align-center flex-wrap">
+            <LangTabs v-model="lang" />
+            <VDivider vertical class="mx-1" style="height:28px" />
+            <VBtn variant="text" color="secondary" size="small" :to="{ name: 'events' }">Bekor qilish</VBtn>
+            <VBtn color="primary" prepend-icon="tabler-device-floppy" :loading="btnLoading" @click="submit">Saqlash</VBtn>
           </div>
         </div>
       </VCardText>
@@ -137,11 +125,11 @@ onMounted(() => {
             <VRow>
               <VCol cols="12">
                 <VTextField
-                  v-model="form.title"
-                  label="Sarlavha *"
-                  :error-messages="errors.title"
-                  variant="outlined"
-                  density="comfortable"
+                  :model-value="form[F.title]"
+                  @update:model-value="v => (form[F.title] = v)"
+                  :label="lang === 'uz' ? 'Sarlavha *' : lang === 'ru' ? 'Заголовок' : 'Title'"
+                  :error-messages="lang === 'uz' ? errors.title : ''"
+                  variant="outlined" density="comfortable"
                   @input="errors.title = ''"
                 />
               </VCol>
@@ -178,7 +166,12 @@ onMounted(() => {
             <VCardTitle class="text-body-1">Tavsif</VCardTitle>
           </VCardItem>
           <VCardText class="pt-4">
-            <AppHtmlEditor v-model="form.description" placeholder="Tadbir haqida yozing..." />
+            <AppHtmlEditor
+              :key="lang"
+              :model-value="form[F.description]"
+              @update:model-value="v => (form[F.description] = v)"
+              :placeholder="lang === 'uz' ? 'Tadbir haqida yozing...' : lang === 'ru' ? 'О мероприятии...' : 'About the event...'"
+            />
           </VCardText>
         </VCard>
 
