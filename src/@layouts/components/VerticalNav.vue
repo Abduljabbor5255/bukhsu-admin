@@ -9,6 +9,7 @@ import {
   VerticalNavLink,
   VerticalNavSectionTitle,
 } from '@layouts/components'
+import { VNodeRenderer } from '@layouts/components/VNodeRenderer.jsx'
 import { config } from '@layouts/config'
 
 const props = defineProps({
@@ -94,15 +95,16 @@ const handleNavScroll = evt => {
           to="/"
           class="app-logo d-flex align-center gap-x-3 app-title-wrapper"
         >
-          <h4 class="text-uppercase">
-            Дешборд Дилера
-          </h4>
+          <VNodeRenderer :nodes="config.app.logo" />
 
           <Transition name="vertical-nav-app-title">
             <h1
               v-show="!hideTitleAndIcon"
-              class="app-title font-weight-bold text-capitalize leading-normal text-xl"
-            />
+              class="app-title font-weight-bold text-uppercase leading-normal"
+              style="font-size: 1.25rem; letter-spacing: 0.04em;"
+            >
+              BuxDU Admin
+            </h1>
           </Transition>
         </RouterLink>
         <!-- 👉 Vertical nav actions -->

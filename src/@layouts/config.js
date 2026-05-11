@@ -1,13 +1,12 @@
 import { breakpointsVuetify } from '@vueuse/core'
 import { AppContentLayoutNav, ContentWidth, FooterType, NavbarType } from '@layouts/enums'
 import { h, ref } from "vue"
+import logo from '@images/logo.svg?raw'
 
 export const config = {
   app: {
-    title: 'title',
-    logo: h('img', { src: '/src/assets/logo.svg' }),
-
-    // logo: () => h('img', { src: 'assets/colored-logo.png' }, null),
+    title: 'BuxDU Admin',
+    logo: h('div', { innerHTML: logo, style: 'line-height:0; color: rgb(var(--v-global-theme-primary))' }),
     contentWidth: ref(ContentWidth.Boxed),
     contentLayoutNav: ref(AppContentLayoutNav.Vertical),
     overlayNavFromBreakpoint: breakpointsVuetify.md,

@@ -4,7 +4,6 @@ import { useThemeConfig } from '@core/composable/useThemeConfig'
 
 // Components
 // import Footer from '@/layouts/components/Footer.vue'
-import NavBarI18n from "@/layouts/components/NavBarI18n.vue"
 import NavbarThemeSwitcher from '@/layouts/components/NavbarThemeSwitcher.vue'
 import UserProfile from '@/layouts/components/UserProfile.vue'
 
@@ -37,8 +36,6 @@ const { width: windowWidth } = useWindowSize()
         </VBtn>
 
         <VSpacer />
-
-        <NavBarI18n class="me-1" />
 
         <NavbarThemeSwitcher class="mr-2" />
 

@@ -5,6 +5,7 @@ import { computed, onMounted, ref, watch } from "vue"
 
 import FilePondImagePreview from "@/plugins/fileUploader/filepond-image-preview/js"
 import FilePondPluginFileValidateType from '@/plugins/fileUploader/filepond-validate-type/js'
+import FilePondPluginImageCrop from 'filepond-plugin-image-crop'
 import * as FilePond from '@/plugins/fileUploader/filepond/js'
 
 /*! CSS FILES */
@@ -36,6 +37,10 @@ const props = defineProps({
     type: Boolean,
     default: false,
   },
+  cropRatio: {
+    type: String,
+    default: null,  // e.g. '1:1', '3:4', '16:9'
+  },
 })
 
 const emits = defineEmits(['update:modelValue'])
@@ -45,6 +50,7 @@ const inputId = ref(generateUUID())
 FilePond.registerPlugin(
   FilePondPluginFileValidateType,
   FilePondImagePreview,
+  FilePondPluginImageCrop,
 )
 
 let pondInstance = ref(null)
@@ -126,7 +132,8 @@ async function initFilepond() {
   pondInstance.value = FilePond.create(inputElement, {
     acceptedFileTypes: ['image/*'],
     allowPaste: true,
-    allowImageCrop: true,
+    allowImageCrop: !!props.cropRatio,
+    imageCropAspectRatio: props.cropRatio || undefined,
     allowMultiple: props.multiple,
     allowImageEdit: true,
     allowImagePreview: true,

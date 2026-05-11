@@ -20,7 +20,7 @@ const isSnackbarVisible = ref(false)
 const snackbarText = ref('')
 
 const headers = [
-  { title: 'ID', key: 'id', sortable: false },
+  { title: 'ID', key: '_id', sortable: false },
   { title: 'Rasm', key: 'image', sortable: false },
   { title: 'Sarlavha', key: 'title', sortable: false },
   { title: 'Sana', key: 'date', sortable: false },
@@ -32,8 +32,8 @@ async function fetchItems() {
   startFetching()
   try {
     const { data } = await eventsApi.findAll({ params: { page: currentPage.value, limit: itemsPerPage.value } })
-    items.value = data.result
-    totalItems.value = data.meta?.total || 0
+    items.value = data.result ?? data.data ?? []
+    totalItems.value = data.meta?.total ?? data.total ?? 0
   } catch (e) {
     console.error(e)
   } finally {
@@ -110,10 +110,10 @@ onMounted(fetchItems)
         </template>
 
         <template #item.actions="{ item }">
-          <IconBtn size="small" :to="{ name: 'events-edit', params: { id: item.raw.id } }">
+          <IconBtn size="small" :to="{ name: 'events-edit', params: { id: item.raw._id ?? item.raw.id } }">
             <VIcon icon="tabler-edit" />
           </IconBtn>
-          <IconBtn size="small" color="error" @click="openDeleteModal(item.raw.id)">
+          <IconBtn size="small" color="error" @click="openDeleteModal(item.raw._id ?? item.raw.id)">
             <VIcon icon="tabler-trash" />
           </IconBtn>
         </template>
