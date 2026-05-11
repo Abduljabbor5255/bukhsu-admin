@@ -5,27 +5,36 @@
  */
 import axios from 'axios'
 
-const BASE_URL    = import.meta.env.VITE_BUXDU_NEXT_URL  || 'http://localhost:3000'
-const ADMIN_TOKEN = import.meta.env.VITE_ADMIN_TOKEN      || 'thinkopolis-admin'
+const BASE_URL    = import.meta.env.VITE_BUXDU_NEXT_URL || 'http://localhost:3002'
+const ADMIN_TOKEN = import.meta.env.VITE_ADMIN_TOKEN
 
 function createInstance() {
   const inst = axios.create({ baseURL: BASE_URL })
 
   inst.interceptors.request.use(cfg => {
-    cfg.headers['x-admin-token'] = ADMIN_TOKEN
+    if (ADMIN_TOKEN) cfg.headers['x-admin-token'] = ADMIN_TOKEN
     return cfg
   })
 
   // Normalize responses so views can read data.result / data.meta.total
-  inst.interceptors.response.use(res => {
-    const raw = res.data
-    if (Array.isArray(raw)) {
-      res.data = { result: raw, data: raw, meta: { total: raw.length }, total: raw.length }
-    } else if (raw && typeof raw === 'object' && !raw.result) {
-      res.data = { result: raw, data: raw }
+  inst.interceptors.response.use(
+    res => {
+      const raw = res.data
+      if (Array.isArray(raw)) {
+        res.data = { result: raw, data: raw, meta: { total: raw.length }, total: raw.length }
+      } else if (raw && typeof raw === 'object' && !raw.result) {
+        res.data = { result: raw, data: raw }
+      }
+      return res
+    },
+    err => {
+      if (err.response?.status === 401) {
+        localStorage.removeItem('accessToken')
+        window.location.href = '/login'
+      }
+      return Promise.reject(err)
     }
-    return res
-  })
+  )
 
   return inst
 }

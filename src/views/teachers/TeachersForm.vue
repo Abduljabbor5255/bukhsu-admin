@@ -3,6 +3,7 @@ import AppHtmlEditor from '@/components/editor/AppHtmlEditor.vue'
 import FormUpload from '@/components/form/FormUpload.vue'
 import FormFileUpload from '@/components/form/FormFileUpload.vue'
 import RepeatableList from '@/components/form/RepeatableList.vue'
+import LangTabs from '@/components/LangTabs.vue'
 import { teachersApi } from '@/services/teachers/teachers.service'
 import { computed, onMounted, reactive, ref } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
@@ -13,20 +14,20 @@ const router = useRouter()
 const isEdit = computed(() => !!route.params.id)
 const pageLoading = ref(false)
 const btnLoading = ref(false)
-const isSnackbarVisible = ref(false)
-const snackbarText = ref('')
+const lang = ref('uz')
+const snackbar = reactive({ show: false, text: '', color: 'success' })
 
 const form = reactive({
   title: '',
   image: null,
   category: '',
   course: '',
-  position: '',
-  degree: '',
+  position: '',    position_ru: '', position_en: '',
+  degree: '',      degree_ru: '',   degree_en: '',
   department: '',
   email: '',
-  short_info: '',
-  bio: '',
+  short_info: '', short_info_ru: '', short_info_en: '',
+  bio: '',         bio_ru: '',       bio_en: '',
   stats: { staj: '', ped_staj: '', ilmiy_ishlar: '', monografiyalar: '', shartnomalar: '' },
   education:  [],
   experience: [],
@@ -36,6 +37,13 @@ const form = reactive({
   projects: [],
   teaching: [],
 })
+
+const F = computed(() => ({
+  position:   lang.value === 'uz' ? 'position'   : `position_${lang.value}`,
+  degree:     lang.value === 'uz' ? 'degree'     : `degree_${lang.value}`,
+  short_info: lang.value === 'uz' ? 'short_info' : `short_info_${lang.value}`,
+  bio:        lang.value === 'uz' ? 'bio'        : `bio_${lang.value}`,
+}))
 
 const errors = reactive({ title: '' })
 
@@ -71,38 +79,31 @@ async function fetchItem(id) {
   pageLoading.value = true
   try {
     const { data } = await teachersApi.findOne({ params: { id } })
-    const r = data.result
+    const r = data.result ?? data
     Object.assign(form, {
-      title:        r.title || '',
-      image:        r.image || null,
-      course:       r.course || '',
-      position:     r.position || '',
-      degree:       r.degree || '',
-      department:   r.department || '',
-      email:        r.email || '',
-      short_info:   r.short_info || '',
-      bio:          r.bio || '',
-      category:     r.category || '',
+      title: r.title || '', image: r.image || null,
+      course: r.course || '', category: r.category || '',
+      department: r.department || '', email: r.email || '',
+      position: r.position || '', position_ru: r.position_ru || '', position_en: r.position_en || '',
+      degree: r.degree || '',     degree_ru: r.degree_ru || '',     degree_en: r.degree_en || '',
+      short_info: r.short_info || '', short_info_ru: r.short_info_ru || '', short_info_en: r.short_info_en || '',
+      bio: r.bio || '',               bio_ru: r.bio_ru || '',               bio_en: r.bio_en || '',
       stats: {
-        staj:           r.stats?.staj           ?? '',
-        ped_staj:       r.stats?.ped_staj       ?? '',
-        ilmiy_ishlar:   r.stats?.ilmiy_ishlar   ?? '',
-        monografiyalar: r.stats?.monografiyalar ?? '',
-        shartnomalar:   r.stats?.shartnomalar   ?? '',
+        staj: r.stats?.staj ?? '', ped_staj: r.stats?.ped_staj ?? '',
+        ilmiy_ishlar: r.stats?.ilmiy_ishlar ?? '', monografiyalar: r.stats?.monografiyalar ?? '',
+        shartnomalar: r.stats?.shartnomalar ?? '',
       },
-      education:    Array.isArray(r.education)   ? r.education.map(e => ({ year: e.year || '', degree: e.degree || '', university: e.university || '' })) : [],
-      experience:   Array.isArray(r.experience)  ? r.experience.map(e => ({ year_from: e.year_from || '', year_to: e.year_to || '', position: e.position || '', organization: e.organization || '' })) : [],
-      articles:     Array.isArray(r.articles)     ? r.articles.map(a => ({ title: a.title || '', journal: a.journal || '', year: a.year || '', url: a.url || '' })) : [],
-      certificates: Array.isArray(r.certificates) ? r.certificates.map(c => ({ title: c.title || '', issuer: c.issuer || '', year: c.year || '', url: c.url || '' })) : [],
-      abstracts:    Array.isArray(r.abstracts)    ? r.abstracts.map(a => ({ title: a.title || '', year: a.year || '', url: a.url || '' })) : [],
-      projects:     Array.isArray(r.projects)     ? r.projects.map(p => ({ title: p.title || '', description: p.description || '', year: p.year || '', url: p.url || '' })) : [],
-      teaching:     Array.isArray(r.teaching)     ? r.teaching.map(c => ({ title: c.title || '', code: c.code || '', level: c.level || '' })) : [],
+      education:    Array.isArray(r.education)    ? r.education.map(e => ({ year: e.year||'', degree: e.degree||'', university: e.university||'' })) : [],
+      experience:   Array.isArray(r.experience)   ? r.experience.map(e => ({ year_from: e.year_from||'', year_to: e.year_to||'', position: e.position||'', organization: e.organization||'' })) : [],
+      articles:     Array.isArray(r.articles)     ? r.articles.map(a => ({ title: a.title||'', journal: a.journal||'', year: a.year||'', url: a.url||'' })) : [],
+      certificates: Array.isArray(r.certificates) ? r.certificates.map(c => ({ title: c.title||'', issuer: c.issuer||'', year: c.year||'', url: c.url||'' })) : [],
+      abstracts:    Array.isArray(r.abstracts)    ? r.abstracts.map(a => ({ title: a.title||'', year: a.year||'', url: a.url||'' })) : [],
+      projects:     Array.isArray(r.projects)     ? r.projects.map(p => ({ title: p.title||'', description: p.description||'', year: p.year||'', url: p.url||'' })) : [],
+      teaching:     Array.isArray(r.teaching)     ? r.teaching.map(c => ({ title: c.title||'', code: c.code||'', level: c.level||'' })) : [],
     })
-  } catch (e) {
-    console.error(e)
-  } finally {
-    pageLoading.value = false
-  }
+  } catch {
+    snackbar.text = "Ma'lumotlarni yuklashda xatolik"; snackbar.color = 'error'; snackbar.show = true
+  } finally { pageLoading.value = false }
 }
 
 async function submit() {
@@ -112,18 +113,16 @@ async function submit() {
     const payload = { type: 'teacher', draft: false, ...form }
     if (isEdit.value) {
       await teachersApi.update({ params: { id: route.params.id, ...payload } })
-      snackbarText.value = "O'qituvchi yangilandi"
+      snackbar.text = "O'qituvchi yangilandi"
     } else {
       await teachersApi.create({ params: payload })
-      snackbarText.value = "O'qituvchi yaratildi"
+      snackbar.text = "O'qituvchi yaratildi"
     }
-    isSnackbarVisible.value = true
+    snackbar.color = 'success'; snackbar.show = true
     setTimeout(() => router.push({ name: 'teachers' }), 800)
-  } catch (e) {
-    console.error(e)
-  } finally {
-    btnLoading.value = false
-  }
+  } catch {
+    snackbar.text = 'Saqlashda xatolik yuz berdi'; snackbar.color = 'error'; snackbar.show = true
+  } finally { btnLoading.value = false }
 }
 
 onMounted(() => {
@@ -133,9 +132,9 @@ onMounted(() => {
 
 <template>
   <section>
-    <!-- Header -->
-    <VCard class="mb-6" elevation="0" border>
-      <VCardText class="py-4">
+    <!-- Sticky header -->
+    <VCard class="mb-6" elevation="0" border style="position: sticky; top: 12px; z-index: 100;">
+      <VCardText class="py-3">
         <div class="d-flex align-center justify-space-between flex-wrap gap-3">
           <div class="d-flex align-center gap-3">
             <VBtn icon="tabler-arrow-left" variant="text" size="small" :to="{ name: 'teachers' }" />
@@ -148,11 +147,11 @@ onMounted(() => {
               </p>
             </div>
           </div>
-          <div class="d-flex gap-2">
+          <div class="d-flex gap-3 align-center flex-wrap">
+            <LangTabs v-model="lang" />
+            <VDivider vertical class="mx-1" style="height:28px" />
             <VBtn variant="text" color="secondary" size="small" :to="{ name: 'teachers' }">Bekor qilish</VBtn>
-            <VBtn color="primary" prepend-icon="tabler-device-floppy" :loading="btnLoading" @click="submit">
-              Saqlash
-            </VBtn>
+            <VBtn color="primary" prepend-icon="tabler-device-floppy" :loading="btnLoading" @click="submit">Saqlash</VBtn>
           </div>
         </div>
       </VCardText>
@@ -193,10 +192,18 @@ onMounted(() => {
                 />
               </VCol>
               <VCol cols="12" md="6">
-                <VTextField v-model="form.position" label="Lavozim" variant="outlined" density="comfortable" />
+                <VTextField
+                  :model-value="form[F.position]"
+                  @update:model-value="v => (form[F.position] = v)"
+                  :label="lang === 'uz' ? 'Lavozim' : lang === 'ru' ? 'Должность' : 'Position'"
+                  variant="outlined" density="comfortable" />
               </VCol>
               <VCol cols="12" md="6">
-                <VTextField v-model="form.degree" label="Ilmiy daraja" variant="outlined" density="comfortable" />
+                <VTextField
+                  :model-value="form[F.degree]"
+                  @update:model-value="v => (form[F.degree] = v)"
+                  :label="lang === 'uz' ? 'Ilmiy daraja' : lang === 'ru' ? 'Учёная степень' : 'Academic degree'"
+                  variant="outlined" density="comfortable" />
               </VCol>
               <VCol cols="12" md="6">
                 <VTextField v-model="form.course" label="Fan / Kurs" variant="outlined" density="comfortable" />
@@ -219,8 +226,9 @@ onMounted(() => {
           </VCardItem>
           <VCardText class="pt-4">
             <VTextField
-              v-model="form.short_info"
-              label="Qisqa tarjimai hol (1–2 jumla)"
+              :model-value="form[F.short_info]"
+              @update:model-value="v => (form[F.short_info] = v)"
+              :label="lang === 'uz' ? 'Qisqa tarjimai hol' : lang === 'ru' ? 'Краткая биография' : 'Short bio'"
               variant="outlined"
               density="comfortable"
               hint="Masalan: 2023-yilda PhD himoya qilgan, 12 yillik tajribaga ega"
@@ -236,7 +244,12 @@ onMounted(() => {
             <VCardTitle class="text-body-1">Biografiya</VCardTitle>
           </VCardItem>
           <VCardText class="pt-4">
-            <AppHtmlEditor v-model="form.bio" placeholder="Biografiyani kiriting..." />
+            <AppHtmlEditor
+              :key="lang"
+              :model-value="form[F.bio]"
+              @update:model-value="v => (form[F.bio] = v)"
+              :placeholder="lang === 'uz' ? 'Biografiyani kiriting...' : lang === 'ru' ? 'Введите биографию...' : 'Enter biography...'"
+            />
           </VCardText>
         </VCard>
 
@@ -478,6 +491,11 @@ onMounted(() => {
       </VCol>
     </VRow>
 
-    <VSnackbar v-model="isSnackbarVisible" color="success">{{ snackbarText }}</VSnackbar>
+    <VSnackbar v-model="snackbar.show" :color="snackbar.color" :timeout="3000" location="bottom right">
+      <div class="d-flex align-center gap-2">
+        <VIcon :icon="snackbar.color === 'success' ? 'tabler-check' : 'tabler-alert-circle'" size="18" />
+        {{ snackbar.text }}
+      </div>
+    </VSnackbar>
   </section>
 </template>

@@ -28,23 +28,20 @@ const username = defineInputBinds('username')
 const password = defineInputBinds('password')
 const { isFetching, startFetching, finishFetching } = useLoading()
 
+const loginError = ref('')
+
 async function authorize() {
+  loginError.value = ''
   try {
     startFetching()
-
     const rsp = await authApi.authorize(values)
-    console.log(rsp)
     const userName = rsp.data.result.user.username
     const { accessToken } = rsp.data.result
-
     localStorage.setItem('accessToken', accessToken)
     localStorage.setItem('userName', userName)
-
-    await router.push({
-      name: 'home',
-    })
-  } catch (e){
-    console.error(e)
+    await router.push({ name: 'home' })
+  } catch {
+    loginError.value = "Login yoki parol noto'g'ri"
   } finally {
     finishFetching()
   }
@@ -116,13 +113,9 @@ const authThemeMask = useGenerateImageVariant(authV2MaskLight, authV2MaskDark)
                   placeholder="Your password"
                   class="mb-8"
                 />
-                <VBtn
-                  block
-                  :loading="isFetching"
-                  type="submit"
-                >
-                  Login
-                </VBtn>
+                <VAlert v-if="loginError" type="error" variant="tonal"
+                  density="compact" class="mb-3" :text="loginError" />
+                <VBtn block :loading="isFetching" type="submit">Login</VBtn>
               </VCol>
             </VRow>
           </VForm>

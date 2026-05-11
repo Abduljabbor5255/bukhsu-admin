@@ -3,6 +3,7 @@ import FormUpload from '@/components/form/FormUpload.vue'
 import FormFileUpload from '@/components/form/FormFileUpload.vue'
 import AppHtmlEditor from '@/components/editor/AppHtmlEditor.vue'
 import RepeatableList from '@/components/form/RepeatableList.vue'
+import LangTabs from '@/components/LangTabs.vue'
 import { studentsApi } from '@/services/students/students.service'
 import { computed, onMounted, reactive, ref } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
@@ -13,21 +14,27 @@ const router = useRouter()
 const isEdit      = computed(() => !!route.params.id)
 const pageLoading = ref(false)
 const btnLoading  = ref(false)
+const lang        = ref('uz')
 const snackbar    = reactive({ show: false, text: '', color: 'success' })
 
 const form = reactive({
-  title:        '',
-  image:        null,
-  direction:    '',
-  achievement:  '',
-  bio:          '',
-  interest:     [],
-  gmail:        '',
-  portfolio:    '',
-  certificates: [],
-  articles:     [],
-  abstracts:    [],
+  title:           '',
+  image:           null,
+  direction:       '',
+  achievement:     '',  achievement_ru: '', achievement_en: '',
+  bio:             '',  bio_ru:         '', bio_en:         '',
+  interest:        [],
+  gmail:           '',
+  portfolio:       '',
+  certificates:    [],
+  articles:        [],
+  abstracts:       [],
 })
+
+const F = computed(() => ({
+  achievement: lang.value === 'uz' ? 'achievement' : `achievement_${lang.value}`,
+  bio:         lang.value === 'uz' ? 'bio'         : `bio_${lang.value}`,
+}))
 
 const errors = reactive({ title: '' })
 
@@ -54,8 +61,8 @@ async function fetchItem(id) {
       title:        r.title        || '',
       image:        r.image        || null,
       direction:    r.direction    || '',
-      achievement:  r.achievement  || '',
-      bio:          r.bio          || '',
+      achievement: r.achievement || '', achievement_ru: r.achievement_ru || '', achievement_en: r.achievement_en || '',
+      bio: r.bio || '',               bio_ru: r.bio_ru || '',               bio_en: r.bio_en || '',
       interest:     Array.isArray(r.interest) ? r.interest : [],
       gmail:        r.gmail        || '',
       portfolio:    r.portfolio    || '',
@@ -108,8 +115,8 @@ onMounted(() => {
 
 <template>
   <section>
-    <!-- Header -->
-    <VCard class="mb-6" elevation="0" border>
+    <!-- Sticky header -->
+    <VCard class="mb-6" elevation="0" border style="position: sticky; top: 12px; z-index: 100;">
       <VCardText class="py-4">
         <div class="d-flex align-center justify-space-between flex-wrap gap-3">
           <div class="d-flex align-center gap-3">
@@ -123,11 +130,11 @@ onMounted(() => {
               </p>
             </div>
           </div>
-          <div class="d-flex gap-2">
+          <div class="d-flex gap-3 align-center flex-wrap">
+            <LangTabs v-model="lang" />
+            <VDivider vertical class="mx-1" style="height:28px" />
             <VBtn variant="text" color="secondary" size="small" :to="{ name: 'students' }">Bekor qilish</VBtn>
-            <VBtn color="primary" prepend-icon="tabler-device-floppy" :loading="btnLoading" @click="submit">
-              Saqlash
-            </VBtn>
+            <VBtn color="primary" prepend-icon="tabler-device-floppy" :loading="btnLoading" @click="submit">Saqlash</VBtn>
           </div>
         </div>
       </VCardText>
@@ -167,8 +174,9 @@ onMounted(() => {
               </VCol>
               <VCol cols="12">
                 <VTextarea
-                  v-model="form.achievement"
-                  label="Yutuq / Muvaffaqiyat"
+                  :model-value="form[F.achievement]"
+                  @update:model-value="v => (form[F.achievement] = v)"
+                  :label="lang === 'uz' ? 'Yutuq / Muvaffaqiyat' : lang === 'ru' ? 'Достижения' : 'Achievement'"
                   rows="3"
                   variant="outlined"
                   density="comfortable"
@@ -185,7 +193,12 @@ onMounted(() => {
             <VCardTitle class="text-body-1">Biografiya</VCardTitle>
           </VCardItem>
           <VCardText class="pt-4">
-            <AppHtmlEditor v-model="form.bio" placeholder="Talaba haqida qisqacha ma'lumot kiriting..." />
+            <AppHtmlEditor
+              :key="lang"
+              :model-value="form[F.bio]"
+              @update:model-value="v => (form[F.bio] = v)"
+              :placeholder="lang === 'uz' ? 'Talaba haqida...' : lang === 'ru' ? 'О студенте...' : 'About student...'"
+            />
           </VCardText>
         </VCard>
 

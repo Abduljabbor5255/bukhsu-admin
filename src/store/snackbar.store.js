@@ -68,7 +68,7 @@ export const useSnackbarStore = defineStore('snackbar', function () {
   }
 
   return {
-    snackbarOptions: unref(snackbarOptions),
+    snackbarOptions,
     setVariant,
     setMultiLine,
     showSnackbar,
