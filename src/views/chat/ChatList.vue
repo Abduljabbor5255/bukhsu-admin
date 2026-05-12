@@ -40,6 +40,24 @@ async function fetchUsers() {
   finally { usersLoading.value = false }
 }
 
+const deletingUserId = ref(null)
+
+async function deleteUser(u) {
+  if (!confirm(`"${u.displayName || u.username}" foydalanuvchisini va barcha xabarlarini o'chirasizmi?`)) return
+  deletingUserId.value = u.id
+  try {
+    await chatApi.deleteUser(u.id)
+    users.value = users.value.filter(x => x.id !== u.id)
+    // remove thread from inbox too if present
+    threads.value = threads.value.filter(t => t.id !== u.threadId)
+    if (activeThread.value?.id === u.threadId) activeThread.value = null
+  } catch {
+    alert("O'chirishda xatolik. Qayta urinib ko'ring.")
+  } finally {
+    deletingUserId.value = null
+  }
+}
+
 // ── Inbox ─────────────────────────────────────────────────────────
 const threads        = ref([])
 const threadsLoading = ref(false)
@@ -450,6 +468,7 @@ onUnmounted(() => {
                   <th>Username</th>
                   <th style="width:110px">Holat</th>
                   <th>Ro'yxatdan o'tgan</th>
+                  <th style="width:56px"></th>
                 </tr>
               </thead>
               <tbody>
@@ -479,6 +498,19 @@ onUnmounted(() => {
                     </VChip>
                   </td>
                   <td class="users-table__date">{{ formatDate(u.createdAt) }}</td>
+                  <td>
+                    <button
+                      class="user-delete-btn"
+                      :disabled="deletingUserId === u.id"
+                      @click="deleteUser(u)"
+                      title="O'chirish"
+                    >
+                      <svg v-if="deletingUserId !== u.id" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round">
+                        <polyline points="3,6 5,6 21,6"/><path d="M19,6l-1,14a2,2,0,0,1-2,2H8a2,2,0,0,1-2-2L5,6"/><path d="M10,11v6M14,11v6"/><path d="M9,6V4a1,1,0,0,1,1-1h4a1,1,0,0,1,1,1V6"/>
+                      </svg>
+                      <div v-else class="chat-spinner chat-spinner--sm" style="border-top-color:#ef4444" />
+                    </button>
+                  </td>
                 </tr>
               </tbody>
             </table>
@@ -910,6 +942,21 @@ onUnmounted(() => {
 .users-table tbody tr:hover { background: #f8fafc; }
 .users-table__num { color: #94a3b8; font-size: .82rem; }
 .users-table__date { color: #64748b; font-size: .78rem; white-space: nowrap; }
+.user-delete-btn {
+  background: none;
+  border: 1.5px solid #fecaca;
+  border-radius: 8px;
+  width: 32px;
+  height: 32px;
+  display: grid;
+  place-items: center;
+  color: #ef4444;
+  cursor: pointer;
+  transition: border-color .15s, background .15s;
+}
+.user-delete-btn:hover:not(:disabled) { background: #fef2f2; border-color: #ef4444; }
+.user-delete-btn:disabled { opacity: .5; cursor: not-allowed; }
+
 .users-online-dot {
   display: inline-block;
   width: 7px;

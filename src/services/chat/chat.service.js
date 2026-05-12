@@ -28,4 +28,9 @@ export const chatApi = {
   reply(threadId, text) {
     return chatInstance.post(`/api/admin/threads/${threadId}`, { text })
   },
+
+  // Delete user + all their messages
+  deleteUser(userId) {
+    return chatInstance.delete(`/api/admin/users/${userId}`)
+  },
 }
