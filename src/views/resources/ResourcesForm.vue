@@ -41,11 +41,6 @@ const form = reactive({
   cover_image: null,
 })
 
-const F = computed(() => ({
-  title:       lang.value === 'uz' ? 'title'       : `title_${lang.value}`,
-  description: lang.value === 'uz' ? 'description' : `description_${lang.value}`,
-}))
-
 const errors = reactive({ title: '' })
 
 function validate() {
@@ -109,7 +104,10 @@ onMounted(() => {
 <template>
   <section>
     <!-- Sticky header -->
-    <div class="d-flex align-center justify-space-between mb-6 sticky-header pa-4 bg-surface" style="position:sticky;top:64px;z-index:10;border-bottom:1px solid rgba(0,0,0,0.08)">
+    <div
+      class="d-flex align-center justify-space-between mb-6 pa-4 bg-surface"
+      style="position:sticky;top:64px;z-index:10;border-bottom:1px solid rgba(0,0,0,0.08)"
+    >
       <div class="d-flex align-center gap-3">
         <VBtn icon="tabler-arrow-left" variant="text" :to="{ name: 'resources' }" />
         <h2 class="text-h4">{{ isEdit ? 'Resursni tahrirlash' : 'Resurs yaratish' }}</h2>
@@ -132,11 +130,23 @@ onMounted(() => {
         <VCard class="mb-4">
           <VCardText>
             <p class="text-overline text-medium-emphasis mb-4">Sarlavha</p>
+
             <VTextField
-              v-model="form[F.title]"
-              :label="`Sarlavha * (${lang.toUpperCase()})`"
-              :error-messages="lang === 'uz' ? errors.title : ''"
-              @input="if (lang === 'uz') errors.title = ''"
+              v-if="lang === 'uz'"
+              v-model="form.title"
+              label="Sarlavha * (UZ)"
+              :error-messages="errors.title"
+              @input="errors.title = ''"
+            />
+            <VTextField
+              v-else-if="lang === 'ru'"
+              v-model="form.title_ru"
+              label="Sarlavha (RU)"
+            />
+            <VTextField
+              v-else
+              v-model="form.title_en"
+              label="Sarlavha (EN)"
             />
           </VCardText>
         </VCard>
@@ -144,13 +154,30 @@ onMounted(() => {
         <!-- Tavsif -->
         <VCard class="mb-4">
           <VCardText>
-            <p class="text-overline text-medium-emphasis mb-4">Tavsif ({{ lang.toUpperCase() }})</p>
+            <p class="text-overline text-medium-emphasis mb-4">Tavsif</p>
+
             <VTextarea
-              v-model="form[F.description]"
-              :label="`Tavsif (${lang.toUpperCase()})`"
+              v-if="lang === 'uz'"
+              v-model="form.description"
+              label="Tavsif (UZ)"
               rows="4"
               class="mb-4"
             />
+            <VTextarea
+              v-else-if="lang === 'ru'"
+              v-model="form.description_ru"
+              label="Tavsif (RU)"
+              rows="4"
+              class="mb-4"
+            />
+            <VTextarea
+              v-else
+              v-model="form.description_en"
+              label="Tavsif (EN)"
+              rows="4"
+              class="mb-4"
+            />
+
             <RepeatableList
               v-model="form.tags"
               label="Teglar"
